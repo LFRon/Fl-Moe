@@ -1,0 +1,115 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+import '../../core/storage/key_value_store.dart';
+import '../../kugou_api.dart';
+
+enum AppThemePreference { system, light, dark }
+
+enum WindowControlSide { left, right }
+
+final class AppSettingsController extends GetxController {
+  AppSettingsController._(
+    this._store,
+    this._themePreference,
+    this._windowControlSide,
+    this._accentColorValue,
+    this._closeToTray,
+    this._clientVariant,
+  );
+
+  factory AppSettingsController.load(KeyValueStore store) {
+    return AppSettingsController._(
+      store,
+      _enumByName(
+        AppThemePreference.values,
+        store.read(_themeKey),
+        AppThemePreference.system,
+      ),
+      _enumByName(
+        WindowControlSide.values,
+        store.read(_windowControlsKey),
+        WindowControlSide.right,
+      ),
+      _readInt(store.read(_accentKey)) ?? 0xFF4C9BE8,
+      store.read(_closeToTrayKey) == true,
+      _enumByName(
+        KugouClientVariant.values,
+        store.read(_clientVariantKey),
+        KugouClientVariant.lite,
+      ),
+    );
+  }
+
+  static const String _themeKey = 'theme';
+  static const String _windowControlsKey = 'window_controls';
+  static const String _accentKey = 'accent_color';
+  static const String _closeToTrayKey = 'close_to_tray';
+  static const String _clientVariantKey = 'kugou_client_variant';
+
+  final KeyValueStore _store;
+  AppThemePreference _themePreference;
+  WindowControlSide _windowControlSide;
+  int _accentColorValue;
+  bool _closeToTray;
+  KugouClientVariant _clientVariant;
+
+  AppThemePreference get themePreference => _themePreference;
+  WindowControlSide get windowControlSide => _windowControlSide;
+  Color get accentColor => Color(_accentColorValue);
+  bool get closeToTray => _closeToTray;
+  KugouClientVariant get clientVariant => _clientVariant;
+
+  ThemeMode get themeMode => switch (_themePreference) {
+    AppThemePreference.system => ThemeMode.system,
+    AppThemePreference.light => ThemeMode.light,
+    AppThemePreference.dark => ThemeMode.dark,
+  };
+
+  void setThemePreference(AppThemePreference value) {
+    if (_themePreference == value) return;
+    _themePreference = value;
+    update();
+    unawaited(_store.write(_themeKey, value.name));
+  }
+
+  void setWindowControlSide(WindowControlSide value) {
+    if (_windowControlSide == value) return;
+    _windowControlSide = value;
+    update();
+    unawaited(_store.write(_windowControlsKey, value.name));
+  }
+
+  void setAccentColor(Color value) {
+    if (_accentColorValue == value.toARGB32()) return;
+    _accentColorValue = value.toARGB32();
+    update();
+    unawaited(_store.write(_accentKey, _accentColorValue));
+  }
+
+  void setCloseToTray(bool value) {
+    if (_closeToTray == value) return;
+    _closeToTray = value;
+    update();
+    unawaited(_store.write(_closeToTrayKey, value));
+  }
+
+  void setClientVariant(KugouClientVariant value) {
+    if (_clientVariant == value) return;
+    _clientVariant = value;
+    update();
+    unawaited(_store.write(_clientVariantKey, value.name));
+  }
+}
+
+T _enumByName<T extends Enum>(List<T> values, Object? raw, T fallback) {
+  if (raw is! String) return fallback;
+  for (final value in values) {
+    if (value.name == raw) return value;
+  }
+  return fallback;
+}
+
+int? _readInt(Object? value) => value is int ? value : null;
