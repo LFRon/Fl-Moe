@@ -42,6 +42,22 @@ void main() {
     expect(readString(result.first, const <String>['name']), 'one');
   });
 
+  test('parses filename-only rows returned by user playlists', () {
+    final track = MusicTrack.fromKugou(<String, Object?>{
+      'filename': '测试歌手 - 收藏歌曲',
+      'singername': '测试歌手',
+      'hash': 'FAVORITE-HASH',
+      'timelen': 188,
+      'album_audio_id': 9988,
+    });
+
+    expect(track.title, '收藏歌曲');
+    expect(track.artist, '测试歌手');
+    expect(track.hash, 'FAVORITE-HASH');
+    expect(track.duration, const Duration(seconds: 188));
+    expect(track.albumAudioId, 9988);
+  });
+
   test('recent-track JSON round-trips through typed models', () {
     const track = MusicTrack(
       id: '1',

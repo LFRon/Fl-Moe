@@ -14,6 +14,7 @@ import '../core/storage/app_directories.dart';
 import '../core/window/desktop_window_service.dart';
 import '../features/auth/authentication_controller.dart';
 import '../features/auth/kugou_user_profile.dart';
+import '../features/music/favorite_tracks_controller.dart';
 import '../features/music/music_catalog_controller.dart';
 import '../features/navigation/app_navigation_controller.dart';
 import '../features/player/audio_engine.dart';
@@ -30,6 +31,7 @@ final class AppDependencies {
     required this.authentication,
     required this.navigation,
     required this.catalog,
+    required this.favorites,
     required this.collectionDetail,
     required this.search,
     required this.playback,
@@ -61,6 +63,7 @@ final class AppDependencies {
       ),
       navigation: AppNavigationController(),
       catalog: MusicCatalogController(core.backend),
+      favorites: FavoriteTracksController(core.backend),
       collectionDetail: MusicCollectionDetailController(core.backend),
       search: MusicSearchController(core.backend),
       playback: PlaybackController(
@@ -88,6 +91,7 @@ final class AppDependencies {
   final AuthenticationController authentication;
   final AppNavigationController navigation;
   final MusicCatalogController catalog;
+  final FavoriteTracksController favorites;
   final MusicCollectionDetailController collectionDetail;
   final MusicSearchController search;
   final PlaybackController playback;

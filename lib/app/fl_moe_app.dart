@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../core/backend/music_backend.dart';
 import '../features/auth/authentication_controller.dart';
+import '../features/music/favorite_tracks_controller.dart';
 import '../features/music/music_catalog_controller.dart';
 import '../features/navigation/app_navigation_controller.dart';
 import '../features/player/playback_controller.dart';
@@ -55,6 +56,7 @@ void _registerDependencies(AppDependencies dependencies) {
   );
   Get.put<AppNavigationController>(dependencies.navigation, permanent: true);
   Get.put<MusicCatalogController>(dependencies.catalog, permanent: true);
+  Get.put<FavoriteTracksController>(dependencies.favorites, permanent: true);
   Get.put<MusicCollectionDetailController>(
     dependencies.collectionDetail,
     permanent: true,

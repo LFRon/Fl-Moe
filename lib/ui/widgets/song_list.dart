@@ -17,7 +17,7 @@ final class SongList extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     children: List<Widget>.generate(
       tracks.length,
-      (index) => _SongRow(
+      (index) => SongListItem(
         track: tracks[index],
         queue: tracks,
         index: index,
@@ -28,12 +28,14 @@ final class SongList extends StatelessWidget {
   );
 }
 
-final class _SongRow extends StatelessWidget {
-  const _SongRow({
+/// One lazily buildable row from [SongList].
+final class SongListItem extends StatelessWidget {
+  const SongListItem({
     required this.track,
     required this.queue,
     required this.index,
     required this.compact,
+    super.key,
   });
 
   final MusicTrack track;

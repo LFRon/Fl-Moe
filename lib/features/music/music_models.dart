@@ -26,13 +26,16 @@ final class MusicTrack {
         asJsonObject(json['trans_param']) ?? const <String, Object?>{};
     final deprecated =
         asJsonObject(json['deprecated']) ?? const <String, Object?>{};
-    final title = readString(json, const <String>[
+    final rawTitle = readString(json, const <String>[
       'OriSongName',
       'SongName',
       'songname',
       'song_name',
+      'ori_audio_name',
       'name',
       'audio_name',
+      'FileName',
+      'filename',
     ]);
     final artist = readString(json, const <String>[
       'SingerName',
@@ -41,6 +44,7 @@ final class MusicTrack {
       'author',
       'singer_name',
     ]);
+    final title = _withoutArtistPrefix(rawTitle, artist);
     final directHash = readString(json, const <String>[
       'FileHash',
       'hash',
@@ -157,6 +161,17 @@ String _firstNonEmpty(List<String> values) {
     if (value.isNotEmpty) return value;
   }
   return '';
+}
+
+String _withoutArtistPrefix(String title, String artist) {
+  if (title.isEmpty || artist.isEmpty) return title;
+  for (final separator in const <String>[' - ', ' — ', ' – ']) {
+    final prefix = '$artist$separator';
+    if (title.startsWith(prefix) && title.length > prefix.length) {
+      return title.substring(prefix.length).trim();
+    }
+  }
+  return title;
 }
 
 final class MusicCollection {
