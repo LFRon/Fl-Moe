@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../scrolling/fl_moe_smooth_scroll.dart';
 import '../../../widgets/loading_skeletons.dart';
 
 final class SearchResultsSkeleton extends StatelessWidget {
@@ -7,7 +8,8 @@ final class SearchResultsSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FlMoeSkeletonScope(
-    child: ListView(
+    child: SilkyListView(
+      silkyConfig: flMoeSmoothScrollConfig,
       key: const ValueKey<String>('search-results-skeleton'),
       children: const <Widget>[
         Row(

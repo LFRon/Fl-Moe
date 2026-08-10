@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../features/music/music_catalog_controller.dart';
+import '../../scrolling/fl_moe_smooth_scroll.dart';
 import '../../widgets/collection_grid.dart';
 import '../../widgets/common_widgets.dart';
 import 'widgets/loading_or_error.dart';
@@ -25,7 +26,8 @@ final class _DiscoverPageState extends State<DiscoverPage> {
   @override
   Widget build(BuildContext context) => GetBuilder<MusicCatalogController>(
     builder: (catalog) {
-      return ListView(
+      return SilkyListView(
+        silkyConfig: flMoeSmoothScrollConfig,
         padding: const EdgeInsets.fromLTRB(28, 24, 28, 32),
         children: <Widget>[
           PageHeading(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../scrolling/fl_moe_smooth_scroll.dart';
 import '../../../widgets/loading_skeletons.dart';
 
 final class SearchSuggestionView extends StatelessWidget {
@@ -17,7 +18,8 @@ final class SearchSuggestionView extends StatelessWidget {
   final ValueChanged<String> onSelected;
 
   @override
-  Widget build(BuildContext context) => ListView(
+  Widget build(BuildContext context) => SilkyListView(
+    silkyConfig: flMoeSmoothScrollConfig,
     children: <Widget>[
       const SizedBox(height: 20),
       Icon(

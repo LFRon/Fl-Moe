@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../features/player/playback_controller.dart';
+import 'scrolling/fl_moe_smooth_scroll.dart';
 import 'widgets/common_widgets.dart';
 import 'widgets/network_artwork.dart';
 
@@ -303,7 +304,8 @@ void _showQueue(BuildContext context, PlaybackController player) {
             Expanded(
               child: player.queue.isEmpty
                   ? const Center(child: Text('播放队列还是空的'))
-                  : ListView.builder(
+                  : SilkyListView.builder(
+                      silkyConfig: flMoeSmoothScrollConfig,
                       itemCount: player.queue.length,
                       itemBuilder: (context, index) {
                         final track = player.queue[index];

@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../../../features/music/music_catalog_controller.dart';
 import '../../../features/navigation/app_navigation_controller.dart';
 import '../../../features/player/playback_controller.dart';
+import '../../scrolling/fl_moe_smooth_scroll.dart';
 import '../../widgets/common_widgets.dart';
 import '../../widgets/song_list.dart';
 import 'widgets/collection_header.dart';
@@ -31,7 +32,8 @@ final class CollectionDetailPage extends StatelessWidget {
                 ),
               );
             }
-            return ListView(
+            return SilkyListView(
+              silkyConfig: flMoeSmoothScrollConfig,
               padding: const EdgeInsets.fromLTRB(28, 20, 28, 32),
               children: <Widget>[
                 Align(

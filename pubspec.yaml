@@ -49,6 +49,7 @@ dependencies:
   media_kit_libs_audio: ^1.0.7
   get: ^4.7.3
   skeleton_shimmer: ^1.1.0
+  silky_scroll: ^2.6.4
 
 dependency_overrides:
   # 配套 cnativeapi 同属尚未开源、即将开源的 Fl-Moe 魔改版本。

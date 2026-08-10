@@ -7,6 +7,7 @@ import '../../../features/auth/authentication_controller.dart';
 import '../../../features/music/music_catalog_controller.dart';
 import '../../../features/navigation/app_navigation_controller.dart';
 import '../../login_dialog.dart';
+import '../../scrolling/fl_moe_smooth_scroll.dart';
 import '../../widgets/collection_grid.dart';
 import '../../widgets/common_widgets.dart';
 import 'widgets/catalog_skeleton.dart';
@@ -25,7 +26,8 @@ final class HomePage extends StatelessWidget {
   Widget build(BuildContext context) => GetBuilder<AuthenticationController>(
     builder: (authentication) => GetBuilder<MusicCatalogController>(
       builder: (catalog) {
-        return ListView(
+        return SilkyListView(
+          silkyConfig: flMoeSmoothScrollConfig,
           padding: const EdgeInsets.fromLTRB(28, 24, 28, 32),
           children: <Widget>[
             HomeHero(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../features/navigation/app_navigation_controller.dart';
+import 'scrolling/fl_moe_smooth_scroll.dart';
 
 final class AppSidebar extends StatelessWidget {
   const AppSidebar({super.key});
@@ -38,7 +39,8 @@ final class AppSidebar extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             Expanded(
-              child: ListView.separated(
+              child: SilkyListView.separated(
+                silkyConfig: flMoeSmoothScrollConfig,
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 itemCount: _items.length,
                 separatorBuilder: (context, index) => const SizedBox(height: 5),

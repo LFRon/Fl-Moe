@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import '../../../features/music/music_catalog_controller.dart';
 import '../../../features/navigation/app_navigation_controller.dart';
+import '../../scrolling/fl_moe_smooth_scroll.dart';
 import '../../widgets/common_widgets.dart';
 import '../../widgets/song_list.dart';
 import 'widgets/search_results_skeleton.dart';
@@ -87,7 +88,8 @@ final class _SearchPageState extends State<SearchPage> {
                     child: search.loading
                         ? const SearchResultsSkeleton()
                         : search.results.isNotEmpty
-                        ? ListView(
+                        ? SilkyListView(
+                            silkyConfig: flMoeSmoothScrollConfig,
                             key: ValueKey<String>('results-${search.query}'),
                             children: <Widget>[
                               Row(
