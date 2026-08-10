@@ -96,11 +96,15 @@ final class AppSettingsController extends GetxController {
     unawaited(_store.write(_closeToTrayKey, value));
   }
 
-  void setClientVariant(KugouClientVariant value) {
+  /// Saves the client variant that will be used on the next application start.
+  ///
+  /// The running [MusicBackend] is intentionally not touched here. Persist
+  /// first so the UI never advertises a value that Hive failed to store.
+  Future<void> setClientVariant(KugouClientVariant value) async {
     if (_clientVariant == value) return;
+    await _store.write(_clientVariantKey, value.name);
     _clientVariant = value;
     update();
-    unawaited(_store.write(_clientVariantKey, value.name));
   }
 }
 

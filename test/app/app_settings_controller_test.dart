@@ -22,8 +22,8 @@ void main() {
     controller
       ..setThemePreference(AppThemePreference.dark)
       ..setWindowControlSide(WindowControlSide.left)
-      ..setAccentColor(const Color(0xFFEC6F9B))
-      ..setClientVariant(KugouClientVariant.standard);
+      ..setAccentColor(const Color(0xFFEC6F9B));
+    await controller.setClientVariant(KugouClientVariant.standard);
     await Future<void>.delayed(Duration.zero);
 
     final restored = AppSettingsController.load(store);

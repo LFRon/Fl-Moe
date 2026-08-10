@@ -3,14 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../core/backend/music_backend.dart';
 import '../../../core/storage/app_directories.dart';
-import '../../../features/auth/authentication_controller.dart';
-import '../../../features/music/music_catalog_controller.dart';
 import '../../../features/settings/app_settings_controller.dart';
 import '../../../kugou_api.dart';
+import '../../scrolling/fl_moe_smooth_scroll.dart';
 import '../../widgets/common_widgets.dart';
 import 'widgets/about_card.dart';
+import 'widgets/client_variant_popup.dart';
 import 'widgets/color_choice.dart';
 import 'widgets/path_row.dart';
 import 'widgets/setting_row.dart';
@@ -23,29 +22,47 @@ final class SettingsPage extends StatelessWidget {
 
   Future<void> _setClientVariant(
     BuildContext context,
+    AppSettingsController settings,
     KugouClientVariant variant,
   ) async {
-    final backend = Get.find<MusicBackend>();
-    final settings = Get.find<AppSettingsController>();
-    final authentication = Get.find<AuthenticationController>();
-    final catalog = Get.find<MusicCatalogController>();
+    if (variant == settings.clientVariant) return;
+    final currentLabel = kugouClientVariantLabel(settings.clientVariant);
+    final nextLabel = kugouClientVariantLabel(variant);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.restart_alt_rounded),
+        title: const Text('切换音源客户端？'),
+        content: Text(
+          '确定将下次启动使用的音源从$currentLabel更改为$nextLabel吗？\n\n'
+          '这次更改只会保存到 Fl-Moe 配置数据库，不会切换当前正在运行的'
+          '音源、登录会话或播放队列。需要重启应用后才会生效。',
+        ),
+        actions: <Widget>[
+          TextButton(
+            key: const ValueKey<String>('cancel-client-variant-switch'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            key: const ValueKey<String>('confirm-client-variant-switch'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('是，保存设置'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
     try {
-      final wasLoggedIn = backend.sessionState.isLoggedIn;
-      await backend.setClientVariant(variant);
-      settings.setClientVariant(variant);
-      authentication.refreshSessionState();
-      unawaited(catalog.refreshLoadedCatalogs());
+      await settings.setClientVariant(variant);
       if (!context.mounted) return;
-      final label = variant == KugouClientVariant.lite ? '概念版' : '标准版';
-      final isLoggedIn = backend.sessionState.isLoggedIn;
-      final message = switch ((wasLoggedIn, isLoggedIn)) {
-        (true, false) => '酷狗音源已切换为$label；该客户端需要单独登录',
-        (false, true) => '酷狗音源已切换为$label，并已恢复该客户端登录',
-        _ => '酷狗音源已切换为$label',
-      };
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      final messenger = ScaffoldMessenger.of(context);
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('已保存为$nextLabel音源；请重启 Fl-Moe 后生效')),
+        );
     } on Object catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(
@@ -56,7 +73,8 @@ final class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GetBuilder<AppSettingsController>(
-    builder: (settings) => ListView(
+    builder: (settings) => SilkyListView(
+      silkyConfig: flMoeSmoothScrollConfig,
       padding: const EdgeInsets.fromLTRB(28, 24, 28, 36),
       children: <Widget>[
         const PageHeading(
@@ -128,22 +146,11 @@ final class SettingsPage extends StatelessWidget {
           children: <Widget>[
             SettingRow(
               title: '音源客户端',
-              subtitle: '默认使用概念版；两种客户端的登录凭据分别保存，首次切换需要单独登录',
-              control: SegmentedButton<KugouClientVariant>(
-                showSelectedIcon: false,
-                segments: const <ButtonSegment<KugouClientVariant>>[
-                  ButtonSegment<KugouClientVariant>(
-                    value: KugouClientVariant.lite,
-                    label: Text('概念版'),
-                  ),
-                  ButtonSegment<KugouClientVariant>(
-                    value: KugouClientVariant.standard,
-                    label: Text('标准版'),
-                  ),
-                ],
-                selected: <KugouClientVariant>{settings.clientVariant},
-                onSelectionChanged: (selection) =>
-                    unawaited(_setClientVariant(context, selection.single)),
+              subtitle: '只保存下次启动使用的客户端，不会改变当前会话；更改后需重启应用',
+              control: ClientVariantPopup(
+                selected: settings.clientVariant,
+                onSelected: (variant) =>
+                    unawaited(_setClientVariant(context, settings, variant)),
               ),
             ),
           ],
