@@ -95,103 +95,113 @@ final class _CollectionCardState extends State<_CollectionCard> {
       child: AnimatedScale(
         scale: _hovered ? 1.018 : 1,
         duration: const Duration(milliseconds: 160),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            mouseCursor: WidgetStateMouseCursor.clickable,
-            borderRadius: BorderRadius.circular(17),
-            onTap: () => unawaited(_open()),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Expanded(
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: <Widget>[
-                      NetworkArtwork(
-                        url: collection.coverUrl,
-                        borderRadius: 17,
-                      ),
-                      Positioned(
-                        right: 10,
-                        bottom: 10,
-                        child: AnimatedOpacity(
-                          opacity: _hovered || _startingPlayback ? 1 : 0,
-                          duration: const Duration(milliseconds: 150),
-                          child: IgnorePointer(
-                            ignoring: !_hovered && !_startingPlayback,
-                            child: IconButton.filled(
-                              key: ValueKey<String>(
-                                'collection-quick-play-${collection.kind.name}-${collection.id}',
-                              ),
-                              tooltip: '播放《${collection.title}》',
-                              style: IconButton.styleFrom(
-                                fixedSize: const Size.square(40),
-                                backgroundColor: scheme.primary,
-                                foregroundColor: scheme.onPrimary,
-                                disabledBackgroundColor: scheme.primary,
-                                disabledForegroundColor: scheme.onPrimary,
-                              ),
-                              // Keep the nested gesture active while loading
-                              // so repeated clicks never fall through to the
-                              // card's navigation action.
-                              onPressed: () => unawaited(_play()),
-                              icon: _startingPlayback
-                                  ? SizedBox.square(
-                                      dimension: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: scheme.onPrimary,
-                                      ),
-                                    )
-                                  : const Icon(Icons.play_arrow_rounded),
-                            ),
-                          ),
+        curve: Curves.easeOutCubic,
+        // A non-null quality makes ScaleTransition transform a bitmap of the
+        // child while the animation is running instead of re-rendering it for
+        // every intermediate scale. Low-quality bilinear sampling is enough
+        // for this subtle desktop hover zoom.
+        filterQuality: FilterQuality.low,
+        child: RepaintBoundary(
+          // This boundary must stay inside AnimatedScale so its display list
+          // can be reused while only the transform layer changes.
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              mouseCursor: WidgetStateMouseCursor.clickable,
+              borderRadius: BorderRadius.circular(17),
+              onTap: () => unawaited(_open()),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Expanded(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: <Widget>[
+                        NetworkArtwork(
+                          url: collection.coverUrl,
+                          borderRadius: 17,
                         ),
-                      ),
-                      if (collection.playCount > 0)
                         Positioned(
-                          top: 9,
-                          right: 9,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              children: <Widget>[
-                                const Icon(
-                                  Icons.headphones_rounded,
-                                  size: 12,
-                                  color: Colors.white,
+                          right: 10,
+                          bottom: 10,
+                          child: AnimatedOpacity(
+                            opacity: _hovered || _startingPlayback ? 1 : 0,
+                            duration: const Duration(milliseconds: 150),
+                            child: IgnorePointer(
+                              ignoring: !_hovered && !_startingPlayback,
+                              child: IconButton.filled(
+                                key: ValueKey<String>(
+                                  'collection-quick-play-${collection.kind.name}-${collection.id}',
                                 ),
-                                const SizedBox(width: 3),
-                                Text(
-                                  _compactNumber(collection.playCount),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                  ),
+                                tooltip: '播放《${collection.title}》',
+                                style: IconButton.styleFrom(
+                                  fixedSize: const Size.square(40),
+                                  backgroundColor: scheme.primary,
+                                  foregroundColor: scheme.onPrimary,
+                                  disabledBackgroundColor: scheme.primary,
+                                  disabledForegroundColor: scheme.onPrimary,
                                 ),
-                              ],
+                                // Keep the nested gesture active while loading
+                                // so repeated clicks never fall through to the
+                                // card's navigation action.
+                                onPressed: () => unawaited(_play()),
+                                icon: _startingPlayback
+                                    ? SizedBox.square(
+                                        dimension: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: scheme.onPrimary,
+                                        ),
+                                      )
+                                    : const Icon(Icons.play_arrow_rounded),
+                              ),
                             ),
                           ),
                         ),
-                    ],
+                        if (collection.playCount > 0)
+                          Positioned(
+                            top: 9,
+                            right: 9,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                children: <Widget>[
+                                  const Icon(
+                                    Icons.headphones_rounded,
+                                    size: 12,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    _compactNumber(collection.playCount),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 9),
-                Text(
-                  collection.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ],
+                  const SizedBox(height: 9),
+                  Text(
+                    collection.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

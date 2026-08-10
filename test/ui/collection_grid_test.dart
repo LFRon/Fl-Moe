@@ -53,6 +53,13 @@ void main() {
       );
 
       final card = find.byKey(const ValueKey<String>('playlist:playlist-1'));
+      final scale = tester.widget<AnimatedScale>(
+        find.descendant(of: card, matching: find.byType(AnimatedScale)),
+      );
+      expect(scale.filterQuality, FilterQuality.low);
+      expect(scale.curve, Curves.easeOutCubic);
+      expect(scale.child, isA<RepaintBoundary>());
+
       final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
       await mouse.addPointer(location: Offset.zero);
       await mouse.moveTo(tester.getCenter(card));
