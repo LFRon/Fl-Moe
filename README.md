@@ -1,17 +1,31 @@
 # Fl-Moe
 
-Fl-Moe 是面向 Windows 与 GNU/Linux 的 Flutter 萌音客户端。当前阶段已经完成仓库初始化，以及内嵌式纯 Dart 酷狗 API 的第一版实现。
+Fl-Moe 是面向 Windows 与 GNU/Linux 的 Flutter 萌音客户端。它保留萌音轻盈、可爱的产品气质，但使用 Material You 重新组织桌面界面；酷狗 API 则以纯 Dart 形式直接编译进同一个 AOT 可执行文件。
 
 ## 当前状态
 
 - 只生成了 Linux、Windows 桌面工程，没有 macOS 工程。
 - 酷狗后端直接编译进 Flutter 应用，不启动子进程、不监听 localhost，也不依赖 Node.js、WebF 或 JavaScript 引擎。
+- 生产环境的 `KugouApi`、Dio、Cookie、签名、密码学与 JSON 解析驻留在长期运行的后台 Dart isolate，UI isolate 只交换可发送的强类型消息；云盘字节数据使用 `TransferableTypedData` 传输。
+- 应用默认使用概念版，可在设置中即时切换标准版。两种客户端共享稳定的设备身份，但分别持久化互不兼容的登录凭据；切换只会恢复目标客户端自己的认证会话，不会跨平台复用 token。
 - 参考 `KuGouMusicApi/module` 的 169 个模块提供 169 个同名路由；路由集合已经逐项比对。
 - 默认网络层为 Dio，网络层通过 `KugouHttpTransport` 抽象，可在测试中完全替换。
 - 已实现标准版/概念版签名、会话与设备身份、Cookie、AES、RSA、KRC、SSA、登录、二维码、云盘分片上传和听歌等级双协议。
 - Analyzer 开启 strict casts、strict inference 与 strict raw types；运行时代码不使用 `dynamic`、反射或运行时脚本解释。
+- 已实现 Material You 桌面外壳、自定义标题栏、可切换左右位置的窗口控制键、侧边导航、首页、发现、歌单/排行详情、搜索、音乐库、云盘入口、设置和常驻播放器。
+- 播放器使用 `media_kit`；登录后先通过 `/privilege/lite` 解析账号可用音质对应的真实 hash，再请求播放 URL。网络封面使用 `cached_network_image_ce`；二维码 API 只返回 URL，由 `pretty_qr_code` 在 Flutter UI 本地绘制。
+- 桌面歌词与状态栏歌词本阶段只保留按钮，不绑定 Treeland 私有协议；系统托盘同样保留在可替换的窗口服务边界之后。
 
-Flutter UI 尚未开始复刻，目前 `lib/main.dart` 仍是 Flutter 初始化模板。
+## 运行
+
+当前机器上的 Flutter 不在 `PATH` 时，可直接运行：
+
+```bash
+/home/mozixun/Develop-SDK/Flutter-SDK/flutter/bin/flutter pub get
+/home/mozixun/Develop-SDK/Flutter-SDK/flutter/bin/flutter run -d linux
+```
+
+Linux runner 不强制设置 `GDK_BACKEND`。在 Wayland 会话（包括 Treeland）中由 GTK/Flutter 选择原生 Wayland 后端，同时保留传统 X11 支持。
 
 ## 使用
 
@@ -46,11 +60,23 @@ final response = await api.callJson(
 
 `KugouApi.call` 是最后一级原始协议边界，可处理 JSON 以外的二进制或文本响应。`Object?` 只保留在外部 JSON/二进制协议边界，应用代码无需依赖 `dynamic` 推断。
 
-酷狗当前会让未认证搜索返回业务码 152。登录完成后，`KugouSession` 会保存 `token`、`userid`、`dfid` 等身份信息并由后续请求复用。
+酷狗当前会让未认证搜索返回业务码 152。登录完成后，`KugouSession` 会按标准版/概念版分别保存 `token`、`userid` 等认证信息，同时共享 `dfid` 等设备身份。旧版本没有记录 token 来源，首次升级会保留设备身份并要求重新登录一次，避免酷狗返回 20018。
 
-## 二维码与网络图片边界
+## UI 与数据边界
 
-`/login/qr/create` 返回 `data.url` 与 `data.content`，两者都是应编码进二维码的 H5 URL，不在 API 内生成 PNG 或 Base64 图片。UI 阶段计划用 `pretty_qr_code` 渲染这个字符串；普通封面等真实图片 URL 则适合交给 `cached_network_image_ce`。这两个 UI 依赖目前没有加入后端阶段的依赖树。
+`/login/qr/create` 返回 `data.url` 与 `data.content`，两者都是应编码进二维码的 H5 URL，不在 API 内生成 PNG 或 Base64 图片。Flutter 使用 `pretty_qr_code` 渲染该字符串；普通封面等真实图片 URL 交给 `cached_network_image_ce`。
+
+Hive CE 数据与 MoeKoe Music 完全隔离：
+
+- Linux 配置与酷狗会话：`${XDG_CONFIG_HOME:-$HOME/.config}/Fl-Moe`
+- Linux 数据库：`${XDG_DATA_HOME:-$HOME/.local/share}/Fl-Moe/Hive`
+- Linux 缓存：`${XDG_CACHE_HOME:-$HOME/.cache}/Fl-Moe`
+- Windows 配置：`%APPDATA%\Fl-Moe`
+- Windows 数据与缓存：`%LOCALAPPDATA%\Fl-Moe`
+
+主题、强调色和窗口按钮位置即时持久化；播放历史存入单独的 `library` box。
+
+窗口操作通过 `DesktopWindowService` 隔离。当前使用成熟的 `window_manager` 实现；`nativeapi` 仍处于 WIP，因此暂不让其不稳定接口进入主线，后续可在不改 Widget 的情况下替换。
 
 ## 验证
 
@@ -92,6 +118,6 @@ dart format lib/kugou_api/src/endpoints/generated_endpoints.dart
 
 ## 平台方向
 
-GNU/Linux 将优先开发，并以原生 Wayland 会话为目标；Windows 随后保持可运行。窗口、播放器、媒体会话、桌面歌词和 xdg-desktop-portal 等桌面集成属于后续 UI/平台阶段，不与内嵌 API 耦合。
+GNU/Linux 优先开发，在 Wayland 会话中使用原生 Wayland，同时保留 X11；Windows 保持可运行。Linux 发行以如意玲珑的差分更新/可选自动升级为准，应用内不重复实现完整更新器。媒体会话、桌面歌词、状态栏歌词、系统托盘与 xdg-desktop-portal 全局快捷键属于后续平台阶段，不与内嵌 API 或 UI 页面耦合。
 
-许可证：GPL-3.0。
+许可证：GPL-2.0-only。
