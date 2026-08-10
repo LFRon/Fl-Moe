@@ -93,7 +93,7 @@ BEGIN
             VALUE "FileDescription", "Fl-Moe" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "fl_moe" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 LFRon. GPL-3.0 licensed." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 LFRon. GPL-2.0-only licensed." "\0"
             VALUE "OriginalFilename", "fl_moe.exe" "\0"
             VALUE "ProductName", "Fl-Moe" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"

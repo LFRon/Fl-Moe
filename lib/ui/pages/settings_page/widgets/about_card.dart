@@ -27,7 +27,7 @@ final class AboutCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  'Flutter 原生桌面音乐客户端 · 纯 Dart 酷狗 API · GPLv3',
+                  'Flutter 原生桌面音乐客户端 · 纯 Dart 酷狗 API · GPLv2',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
