@@ -1,7 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter/widgets.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:nativeapi/nativeapi.dart' as nativeapi;
 
 abstract interface class DesktopWindowService {
   Future<void> initialize();
@@ -15,51 +14,50 @@ abstract interface class DesktopWindowService {
   Future<void> close();
 }
 
-final class WindowManagerDesktopWindowService implements DesktopWindowService {
-  const WindowManagerDesktopWindowService();
+final class NativeApiDesktopWindowService implements DesktopWindowService {
+  nativeapi.Window? _mainWindow;
 
   bool get _isDesktop => Platform.isLinux || Platform.isWindows;
 
   @override
   Future<void> initialize() async {
     if (!_isDesktop) return;
-    await windowManager.ensureInitialized();
-    const options = WindowOptions(
-      size: Size(1280, 800),
-      minimumSize: Size(960, 640),
-      center: true,
-      title: 'Fl-Moe',
-      titleBarStyle: TitleBarStyle.hidden,
-    );
-    await windowManager.waitUntilReadyToShow(options, () async {
-      await windowManager.show();
-      await windowManager.focus();
-    });
+    final window = nativeapi.WindowManager.instance.getMain();
+    if (window == null) {
+      throw StateError('NativeAPI could not find the Flutter main window.');
+    }
+    _mainWindow = window;
+    window.title = 'Fl-Moe';
+    window.titleBarStyle = nativeapi.TitleBarStyle.hidden;
+    window.setSize(1280, 800);
+    window.setMinimumSize(960, 640);
+    window.center();
   }
 
   @override
   Future<void> startDragging() async {
-    if (_isDesktop) await windowManager.startDragging();
+    _mainWindow?.startDragging();
   }
 
   @override
   Future<void> minimize() async {
-    if (_isDesktop) await windowManager.minimize();
+    _mainWindow?.minimize();
   }
 
   @override
   Future<void> toggleMaximize() async {
-    if (!_isDesktop) return;
-    if (await windowManager.isMaximized()) {
-      await windowManager.unmaximize();
+    final window = _mainWindow;
+    if (window == null) return;
+    if (window.isMaximized) {
+      window.unmaximize();
     } else {
-      await windowManager.maximize();
+      window.maximize();
     }
   }
 
   @override
   Future<void> close() async {
-    if (_isDesktop) await windowManager.close();
+    _mainWindow?.close();
   }
 }
 

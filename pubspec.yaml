@@ -40,13 +40,21 @@ dependencies:
   archive: ^4.0.9
   asn1lib: ^1.6.5
   hive_ce: ^2.19.3
-  window_manager: ^0.5.2
+  # 当前使用的是 Fl-Moe 魔改版 nativeapi，尚未开源，相关源码即将开源。
+  nativeapi:
+    path: ../nativeapi-flutter-linux/packages/nativeapi
   cached_network_image_ce: ^4.10.0
   pretty_qr_code: ^3.6.0
   media_kit: ^1.2.6
   media_kit_libs_audio: ^1.0.7
   get: ^4.7.3
   skeleton_shimmer: ^1.1.0
+
+dependency_overrides:
+  # 配套 cnativeapi 同属尚未开源、即将开源的 Fl-Moe 魔改版本。
+  cnativeapi:
+    path: ../nativeapi-flutter-linux/packages/cnativeapi
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

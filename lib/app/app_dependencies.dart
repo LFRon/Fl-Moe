@@ -37,7 +37,7 @@ final class AppDependencies {
 
   static Future<AppDependencies> initialize() async {
     final directories = AppDirectories.resolve();
-    const window = WindowManagerDesktopWindowService();
+    final window = NativeApiDesktopWindowService();
     late final _InitializedCore core;
     // Both branches are local-only and can be completed concurrently before
     // rendering the real application UI.
