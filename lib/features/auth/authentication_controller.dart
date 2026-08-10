@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:get/get.dart';
@@ -6,6 +7,7 @@ import '../../core/backend/music_backend.dart';
 import '../../core/storage/key_value_store.dart';
 import '../../kugou_api.dart';
 import '../music/music_models.dart';
+import 'kugou_user_profile.dart';
 
 enum QrLoginState { waiting, scanned, authorized, expired }
 
@@ -62,12 +64,25 @@ final class KugouSessionRepository {
 }
 
 final class AuthenticationController extends GetxController {
-  AuthenticationController(this._backend);
+  AuthenticationController(
+    this._backend, {
+    KugouUserProfileRepository? profileRepository,
+  }) : _profileRepository = profileRepository,
+       _profile = profileRepository?.load(
+         variant: _backend.clientVariant,
+         userId: _backend.sessionState.userId,
+       );
 
   final MusicBackend _backend;
+  final KugouUserProfileRepository? _profileRepository;
+  KugouUserProfile? _profile;
+  Future<bool>? _profileRequest;
+  ({KugouClientVariant variant, String userId})? _profileRequestIdentity;
 
   bool get isLoggedIn => _backend.sessionState.isLoggedIn;
   String get userId => _backend.sessionState.userId;
+  String get nickname => _profile?.nickname ?? '';
+  String get avatarUrl => _profile?.avatarUrl ?? '';
 
   Future<QrLoginChallenge> createQrChallenge() async {
     final registered = await _backend.ensureDeviceRegistered();
@@ -109,7 +124,15 @@ final class AuthenticationController extends GetxController {
     };
     if (state == QrLoginState.authorized) {
       await _backend.flushSession();
+      final loginProfile = KugouUserProfile.fromApiData(
+        data,
+        fallbackUserId: userId,
+      );
+      if (loginProfile != null) {
+        await _setProfile(loginProfile, variant: _backend.clientVariant);
+      }
       update();
+      unawaited(refreshUserProfile());
     }
     return QrLoginResult(
       state: state,
@@ -118,11 +141,95 @@ final class AuthenticationController extends GetxController {
   }
 
   Future<void> signOut() async {
+    final previousVariant = _backend.clientVariant;
+    final previousUserId = userId;
     await _backend.clearAuthentication();
+    _profile = null;
     update();
+    try {
+      await _profileRepository?.delete(
+        variant: previousVariant,
+        userId: previousUserId,
+      );
+    } on Object {
+      // The authentication state is already cleared; stale presentation data
+      // must never make logout fail.
+    }
+  }
+
+  /// Refreshes public profile data through the embedded backend isolate.
+  /// Failures deliberately retain the cached profile/local mascot.
+  Future<bool> refreshUserProfile() {
+    if (!isLoggedIn) return Future<bool>.value(false);
+    final identity = (variant: _backend.clientVariant, userId: userId);
+    final inFlight = _profileRequest;
+    if (inFlight != null && _profileRequestIdentity == identity) {
+      return inFlight;
+    }
+
+    late final Future<bool> operation;
+    operation = _fetchUserProfile(identity).whenComplete(() {
+      if (identical(_profileRequest, operation)) {
+        _profileRequest = null;
+        _profileRequestIdentity = null;
+      }
+    });
+    _profileRequestIdentity = identity;
+    _profileRequest = operation;
+    return operation;
   }
 
   /// Rebuilds account-dependent UI after the backend activates another
   /// platform-scoped session.
-  void refreshSessionState() => update();
+  void refreshSessionState() {
+    _profile = _profileRepository?.load(
+      variant: _backend.clientVariant,
+      userId: userId,
+    );
+    update();
+    if (isLoggedIn) unawaited(refreshUserProfile());
+  }
+
+  Future<bool> _fetchUserProfile(
+    ({KugouClientVariant variant, String userId}) identity,
+  ) async {
+    try {
+      if (!_backend.sessionState.hasRegisteredDevice &&
+          !await _backend.ensureDeviceRegistered()) {
+        return false;
+      }
+      final response = await _backend.userDetail();
+      final data = asJsonObject(response.body['data']);
+      final profile = data == null
+          ? null
+          : KugouUserProfile.fromApiData(data, fallbackUserId: identity.userId);
+      if (profile == null ||
+          _backend.clientVariant != identity.variant ||
+          userId != identity.userId) {
+        return false;
+      }
+      await _setProfile(profile, variant: identity.variant);
+      return avatarUrl.isNotEmpty;
+    } on Object {
+      return false;
+    }
+  }
+
+  Future<void> _setProfile(
+    KugouUserProfile incoming, {
+    required KugouClientVariant variant,
+  }) async {
+    final current = _profile;
+    final next = current == null ? incoming : current.merge(incoming);
+    if (next != current) {
+      _profile = next;
+      update();
+    }
+    try {
+      await _profileRepository?.save(next, variant: variant);
+    } on Object {
+      // Rendering the freshly fetched profile is still useful when storage is
+      // temporarily unavailable.
+    }
+  }
 }

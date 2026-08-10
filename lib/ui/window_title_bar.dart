@@ -10,6 +10,7 @@ import '../features/music/music_catalog_controller.dart';
 import '../features/navigation/app_navigation_controller.dart';
 import '../features/settings/app_settings_controller.dart';
 import 'login_dialog.dart';
+import 'widgets/network_artwork.dart';
 
 final class FlMoeTitleBar extends StatefulWidget {
   const FlMoeTitleBar({required this.window, super.key});
@@ -121,15 +122,26 @@ final class _FlMoeTitleBarState extends State<FlMoeTitleBar> {
                 if (authentication.isLoggedIn)
                   PopupMenuButton<String>(
                     tooltip: '酷狗账号',
+                    borderRadius: BorderRadius.circular(20),
+                    splashRadius: 20,
                     onSelected: (value) {
                       if (value == 'logout') {
                         unawaited(authentication.signOut());
                       }
                     },
+                    popUpAnimationStyle: const AnimationStyle(
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeOutCubic,
+                      reverseCurve: Curves.easeInCubic,
+                    ),
                     itemBuilder: (context) => <PopupMenuEntry<String>>[
                       PopupMenuItem<String>(
                         enabled: false,
-                        child: Text('酷狗用户 ${authentication.userId}'),
+                        child: Text(
+                          authentication.nickname.isEmpty
+                              ? '酷狗用户 ${authentication.userId}'
+                              : authentication.nickname,
+                        ),
                       ),
                       const PopupMenuDivider(),
                       const PopupMenuItem<String>(
@@ -137,14 +149,17 @@ final class _FlMoeTitleBarState extends State<FlMoeTitleBar> {
                         child: Text('退出登录'),
                       ),
                     ],
-                    child: const MouseRegion(
+                    child: MouseRegion(
                       cursor: SystemMouseCursors.click,
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 10),
-                        child: CircleAvatar(
-                          radius: 15,
-                          backgroundImage: AssetImage(
-                            'assets/images/app_mascot.png',
+                      child: SizedBox.square(
+                        key: const ValueKey<String>('kugou-account-button'),
+                        dimension: 40,
+                        child: Center(
+                          child: NetworkArtwork(
+                            key: const ValueKey<String>('kugou-account-avatar'),
+                            url: authentication.avatarUrl,
+                            size: 30,
+                            borderRadius: 15,
                           ),
                         ),
                       ),

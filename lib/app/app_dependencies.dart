@@ -13,6 +13,7 @@ import '../core/storage/app_database.dart';
 import '../core/storage/app_directories.dart';
 import '../core/window/desktop_window_service.dart';
 import '../features/auth/authentication_controller.dart';
+import '../features/auth/kugou_user_profile.dart';
 import '../features/music/music_catalog_controller.dart';
 import '../features/navigation/app_navigation_controller.dart';
 import '../features/player/audio_engine.dart';
@@ -54,7 +55,10 @@ final class AppDependencies {
       imageCache: core.imageCache,
       backend: core.backend,
       settings: core.settings,
-      authentication: AuthenticationController(core.backend),
+      authentication: AuthenticationController(
+        core.backend,
+        profileRepository: KugouUserProfileRepository(core.database.session),
+      ),
       navigation: AppNavigationController(),
       catalog: MusicCatalogController(core.backend),
       collectionDetail: MusicCollectionDetailController(core.backend),
@@ -72,6 +76,7 @@ final class AppDependencies {
   /// after the real desktop shell has rendered its first frame.
   void startOnlineTasks() {
     unawaited(catalog.loadHomeCatalog());
+    unawaited(authentication.refreshUserProfile());
     unawaited(_preRegisterDevice(backend));
   }
 

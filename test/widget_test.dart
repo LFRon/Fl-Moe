@@ -3,12 +3,14 @@ import 'package:fl_moe/core/backend/music_backend.dart';
 import 'package:fl_moe/core/storage/key_value_store.dart';
 import 'package:fl_moe/core/window/desktop_window_service.dart';
 import 'package:fl_moe/features/auth/authentication_controller.dart';
+import 'package:fl_moe/features/auth/kugou_user_profile.dart';
 import 'package:fl_moe/features/player/audio_engine.dart';
 import 'package:fl_moe/features/player/playback_controller.dart';
 import 'package:fl_moe/features/settings/app_settings_controller.dart';
 import 'package:fl_moe/kugou_api.dart';
 import 'package:fl_moe/ui/player_bar.dart';
 import 'package:fl_moe/ui/widgets/loading_skeletons.dart';
+import 'package:fl_moe/ui/widgets/network_artwork.dart';
 import 'package:fl_moe/ui/window_title_bar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -75,6 +77,57 @@ void main() {
     await tester.tap(find.byTooltip('最大化 / 还原'));
     await tester.tap(find.byTooltip('关闭'));
     expect(window.actions, <String>['minimize', 'maximize', 'close']);
+  });
+
+  testWidgets('logged-in account button uses a circular hover target', (
+    tester,
+  ) async {
+    Get.testMode = true;
+    await tester.binding.setSurfaceSize(const Size(1200, 200));
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+      Get.reset();
+    });
+    const backend = _IdleMusicBackend(loggedIn: true);
+    final profileRepository = KugouUserProfileRepository(MemoryKeyValueStore());
+    await profileRepository.save(
+      const KugouUserProfile(
+        userId: '123456',
+        nickname: '测试用户',
+        avatarUrl: 'https://img.example.test/avatar.jpg',
+      ),
+      variant: KugouClientVariant.lite,
+    );
+    Get.put<AppSettingsController>(
+      AppSettingsController.load(MemoryKeyValueStore()),
+    );
+    Get.put<AuthenticationController>(
+      AuthenticationController(backend, profileRepository: profileRepository),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FlMoeTheme.light(const Color(0xFF4C9BE8)),
+        home: Scaffold(body: FlMoeTitleBar(window: _RecordingWindowService())),
+      ),
+    );
+
+    final accountButton = find.byKey(
+      const ValueKey<String>('kugou-account-button'),
+    );
+    expect(tester.getSize(accountButton), const Size.square(40));
+    final popup = tester.widget<PopupMenuButton<String>>(
+      find.byType(PopupMenuButton<String>),
+    );
+    expect(popup.borderRadius, BorderRadius.circular(20));
+    expect(popup.splashRadius, 20);
+    final avatar = tester.widget<NetworkArtwork>(
+      find.byKey(const ValueKey<String>('kugou-account-avatar')),
+    );
+    expect(avatar.url, 'https://img.example.test/avatar.jpg');
+    expect(avatar.size, 30);
+    expect(avatar.borderRadius, 15);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('player trailing controls use compact optical spacing', (
@@ -211,17 +264,25 @@ void main() {
 }
 
 final class _IdleMusicBackend implements MusicBackend {
-  const _IdleMusicBackend();
+  const _IdleMusicBackend({this.loggedIn = false});
+
+  final bool loggedIn;
 
   @override
   KugouClientVariant get clientVariant => KugouClientVariant.lite;
 
   @override
-  BackendSessionState get sessionState => const BackendSessionState(
-    isLoggedIn: false,
-    userId: '0',
-    hasRegisteredDevice: false,
-  );
+  BackendSessionState get sessionState => loggedIn
+      ? const BackendSessionState(
+          isLoggedIn: true,
+          userId: '123456',
+          hasRegisteredDevice: true,
+        )
+      : const BackendSessionState(
+          isLoggedIn: false,
+          userId: '0',
+          hasRegisteredDevice: false,
+        );
 
   @override
   Future<KugouResponse<KugouJsonObject>> callJson(
