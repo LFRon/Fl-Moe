@@ -49,6 +49,36 @@ void main() {
     },
   );
 
+  test('typed favorite requests use account playlist endpoints', () async {
+    final transport = _TypedTransport();
+    final api = KugouApi(transport: transport);
+    addTearDown(api.close);
+
+    await api.userPlaylists(
+      const KugouUserPlaylistsQuery(page: 2, pageSize: 80),
+    );
+    await api.userPlaylistTracks(
+      const KugouUserPlaylistTracksQuery(listId: '77', page: 3, pageSize: 60),
+    );
+
+    expect(transport.requests.map((request) => request.uri.path), <String>[
+      '/v7/get_all_list',
+      '/v4/get_list_all_file',
+    ]);
+    expect(
+      const KugouUserPlaylistsQuery(page: 2, pageSize: 80).toParameters(),
+      <String, Object?>{'page': 2, 'pagesize': 80},
+    );
+    expect(
+      const KugouUserPlaylistTracksQuery(
+        listId: '77',
+        page: 3,
+        pageSize: 60,
+      ).toParameters(),
+      <String, Object?>{'listid': '77', 'page': 3, 'pagesize': 60},
+    );
+  });
+
   test('typed JSON boundary rejects a non-object response', () async {
     final transport = _TypedTransport()..body = 'not-json';
     final api = KugouApi(transport: transport);

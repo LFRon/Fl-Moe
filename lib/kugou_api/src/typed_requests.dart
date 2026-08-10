@@ -135,6 +135,42 @@ final class KugouPlaylistTracksQuery {
   };
 }
 
+/// Pages through every playlist owned or collected by the signed-in account.
+final class KugouUserPlaylistsQuery {
+  const KugouUserPlaylistsQuery({this.page = 1, this.pageSize = 100})
+    : assert(page > 0),
+      assert(pageSize > 0);
+
+  final int page;
+  final int pageSize;
+
+  KugouJsonObject toParameters() => <String, Object?>{
+    'page': page,
+    'pagesize': pageSize,
+  };
+}
+
+/// Pages through a user playlist by its account-scoped `listid`.
+final class KugouUserPlaylistTracksQuery {
+  const KugouUserPlaylistTracksQuery({
+    required this.listId,
+    this.page = 1,
+    this.pageSize = 100,
+  }) : assert(listId.length > 0),
+       assert(page > 0),
+       assert(pageSize > 0);
+
+  final String listId;
+  final int page;
+  final int pageSize;
+
+  KugouJsonObject toParameters() => <String, Object?>{
+    'listid': listId,
+    'page': page,
+    'pagesize': pageSize,
+  };
+}
+
 final class KugouLyricsQuery {
   const KugouLyricsQuery({
     required this.id,

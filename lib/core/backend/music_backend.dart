@@ -70,6 +70,17 @@ extension MusicBackendOperations on MusicBackend {
     KugouPlaylistTracksQuery query,
   ) => callJson('/playlist/track/all', parameters: query.toParameters());
 
+  Future<KugouResponse<KugouJsonObject>> userPlaylists(
+    KugouUserPlaylistsQuery query,
+  ) => callJson('/user/playlist', parameters: query.toParameters());
+
+  Future<KugouResponse<KugouJsonObject>> userPlaylistTracks(
+    KugouUserPlaylistTracksQuery query,
+  ) => callJson('/playlist/track/all/new', parameters: query.toParameters());
+
+  Future<KugouResponse<KugouJsonObject>> userDetail() =>
+      callJson('/user/detail');
+
   Future<KugouResponse<KugouJsonObject>> loginQrKey({bool web = false}) =>
       callJson(
         '/login/qr/key',
