@@ -30,6 +30,10 @@ extension KugouTypedApi on KugouApi {
     KugouSongUrlQuery query,
   ) => callJson('/song/url', parameters: query.toParameters());
 
+  Future<KugouResponse<KugouJsonObject>> songPrivileges(
+    KugouSongPrivilegeQuery query,
+  ) => callJson('/privilege/lite', parameters: query.toParameters());
+
   Future<KugouResponse<KugouJsonObject>> playlistTracks(
     KugouPlaylistTracksQuery query,
   ) => callJson('/playlist/track/all', parameters: query.toParameters());

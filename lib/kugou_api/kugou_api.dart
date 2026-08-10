@@ -22,7 +22,7 @@ final class KugouApi {
     KugouHttpTransport? transport,
     Map<String, KugouEndpointHandler>? additionalEndpoints,
   }) : config = config,
-       session = session ?? KugouSession(variant: config.variant),
+       session = _sessionForConfig(config, session),
        _transport =
            transport ?? DioKugouTransport(timeout: config.requestTimeout) {
     _executor = KugouRequestExecutor(
@@ -83,4 +83,16 @@ final class KugouApi {
     if (_endpoints.containsKey(value)) return value;
     return value.replaceAll('_', '/');
   }
+}
+
+KugouSession _sessionForConfig(KugouApiConfig config, KugouSession? session) {
+  if (session == null) return KugouSession(variant: config.variant);
+  if (session.variant != config.variant) {
+    throw ArgumentError.value(
+      session.variant,
+      'session',
+      'Session variant must match KugouApiConfig.variant (${config.variant.name})',
+    );
+  }
+  return session;
 }

@@ -102,6 +102,19 @@ final class KugouSongUrlQuery {
   };
 }
 
+final class KugouSongPrivilegeQuery {
+  const KugouSongPrivilegeQuery({required this.hash, this.albumId = 0})
+    : assert(hash.length > 0);
+
+  final String hash;
+  final int albumId;
+
+  KugouJsonObject toParameters() => <String, Object?>{
+    'hash': hash,
+    'album_id': albumId,
+  };
+}
+
 final class KugouPlaylistTracksQuery {
   const KugouPlaylistTracksQuery({
     required this.collectionId,

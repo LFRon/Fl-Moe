@@ -2,6 +2,16 @@ import 'package:fl_moe/kugou_api.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('rejects a session created for another KuGou client variant', () {
+    expect(
+      () => KugouApi(
+        config: const KugouApiConfig(variant: KugouClientVariant.lite),
+        session: KugouSession(variant: KugouClientVariant.standard),
+      ),
+      throwsArgumentError,
+    );
+  });
+
   test('QR API returns the payload URL without rendering an image', () async {
     final transport = _TypedTransport();
     final api = KugouApi(transport: transport);
@@ -16,7 +26,7 @@ void main() {
   });
 
   test(
-    'typed song URL request adds key and intentionally skips signature',
+    'typed song URL request adds both its key and Android signature',
     () async {
       final transport = _TypedTransport();
       final api = KugouApi(transport: transport);
@@ -35,7 +45,7 @@ void main() {
       expect(request.parameters['hash'], 'abcdef');
       expect(request.parameters['quality'], 'magic_piano');
       expect(request.parameters['key']! as String, hasLength(32));
-      expect(request.parameters, isNot(contains('signature')));
+      expect(request.parameters['signature']! as String, hasLength(32));
     },
   );
 

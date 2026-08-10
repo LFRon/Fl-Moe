@@ -77,7 +77,6 @@ Future<KugouResponse<Object?>> _songUrl(
       },
       headers: const <String, Object?>{'x-router': 'trackercdn.kugou.com'},
       encryptKey: true,
-      skipSignature: true,
       cookies: <String, String>{
         'dfid': randomString(24),
         ...context.session.cookies,
