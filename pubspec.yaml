@@ -39,6 +39,14 @@ dependencies:
   pointycastle: ^4.0.0
   archive: ^4.0.9
   asn1lib: ^1.6.5
+  hive_ce: ^2.19.3
+  window_manager: ^0.5.2
+  cached_network_image_ce: ^4.10.0
+  pretty_qr_code: ^3.6.0
+  media_kit: ^1.2.6
+  media_kit_libs_audio: ^1.0.7
+  get: ^4.7.3
+  skeleton_shimmer: ^1.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -60,6 +68,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/images/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
