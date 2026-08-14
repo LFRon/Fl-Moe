@@ -92,7 +92,7 @@ final class _FavoriteTracksViewState extends State<FavoriteTracksView> {
         }
         if (!widget.loggedIn) {
           return EmptyState(
-            title: '登录后查看我的收藏',
+            title: '登录后查看“我喜欢”',
             message: '收藏歌曲来自当前酷狗账号的“我喜欢”歌单。',
             asset: 'assets/images/favorites.png',
             action: FilledButton.icon(
@@ -196,7 +196,7 @@ final class _FavoriteHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    '我的收藏',
+                    '我喜欢',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),

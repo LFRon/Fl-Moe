@@ -5,6 +5,9 @@ import 'package:get/get.dart';
 
 import '../../../features/auth/authentication_controller.dart';
 import '../../../features/music/favorite_tracks_controller.dart';
+import '../../../features/music/music_catalog_controller.dart';
+import '../../../features/music/user_playlists_controller.dart';
+import '../../../features/navigation/app_navigation_controller.dart';
 import '../../../features/player/playback_controller.dart';
 import '../../login_dialog.dart';
 import '../../scrolling/fl_moe_smooth_scroll.dart';
@@ -12,6 +15,9 @@ import '../../widgets/common_widgets.dart';
 import '../../widgets/song_list.dart';
 import 'widgets/favorite_tracks_view.dart';
 import 'widgets/library_card.dart';
+import 'widgets/user_playlists_section.dart';
+
+enum _LibraryView { overview, favoriteTracks }
 
 final class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
@@ -21,44 +27,100 @@ final class LibraryPage extends StatefulWidget {
 }
 
 final class _LibraryPageState extends State<LibraryPage> {
-  bool _showFavorites = false;
+  _LibraryView _view = _LibraryView.overview;
+  bool _playlistLoadScheduled = false;
+
+  void _schedulePlaylistLoad(
+    AuthenticationController authentication,
+    UserPlaylistsController playlists,
+  ) {
+    if (_playlistLoadScheduled ||
+        !authentication.isLoggedIn ||
+        playlists.loading ||
+        playlists.loaded ||
+        playlists.error != null) {
+      return;
+    }
+    _playlistLoadScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playlistLoadScheduled = false;
+      if (mounted) unawaited(playlists.load());
+    });
+  }
+
+  Future<void> _loginForPlaylists(UserPlaylistsController playlists) async {
+    if (!await showQrLoginDialog(context) || !mounted) return;
+    unawaited(playlists.load(force: true));
+  }
+
+  Future<void> _loginForFavorites(
+    FavoriteTracksController favorites,
+    UserPlaylistsController playlists,
+  ) async {
+    if (!await showQrLoginDialog(context) || !mounted) return;
+    unawaited(playlists.load(force: true));
+    unawaited(favorites.load(force: true));
+  }
 
   Future<void> _openFavorites(
     AuthenticationController authentication,
     FavoriteTracksController favorites,
+    UserPlaylistsController playlists,
   ) async {
     if (!authentication.isLoggedIn && !await showQrLoginDialog(context)) return;
     if (!mounted) return;
-    setState(() => _showFavorites = true);
+    setState(() => _view = _LibraryView.favoriteTracks);
+    unawaited(playlists.load());
     unawaited(favorites.load());
   }
 
-  Future<void> _loginForFavorites(FavoriteTracksController favorites) async {
-    if (!await showQrLoginDialog(context) || !mounted) return;
-    unawaited(favorites.load(force: true));
+  Future<void> _openPlaylist(
+    UserPlaylist playlist,
+    FavoriteTracksController favorites,
+  ) async {
+    if (playlist.isFavorite) {
+      setState(() => _view = _LibraryView.favoriteTracks);
+      await favorites.load();
+      return;
+    }
+    final collection = playlist.collection;
+    Get.find<AppNavigationController>().openCollection(collection);
+    await Get.find<MusicCollectionDetailController>().load(collection);
   }
 
   @override
   Widget build(BuildContext context) => GetBuilder<AuthenticationController>(
-    builder: (authentication) => GetBuilder<FavoriteTracksController>(
-      builder: (favorites) => _showFavorites
-          ? FavoriteTracksView(
+    builder: (authentication) => GetBuilder<UserPlaylistsController>(
+      builder: (playlists) => GetBuilder<FavoriteTracksController>(
+        builder: (favorites) {
+          _schedulePlaylistLoad(authentication, playlists);
+          return switch (_view) {
+            _LibraryView.favoriteTracks => FavoriteTracksView(
               controller: favorites,
               loggedIn: authentication.isLoggedIn,
-              onBack: () => setState(() => _showFavorites = false),
-              onLogin: () => _loginForFavorites(favorites),
-            )
-          : GetBuilder<PlaybackController>(
+              onBack: () => setState(() => _view = _LibraryView.overview),
+              onLogin: () => _loginForFavorites(favorites, playlists),
+            ),
+            _LibraryView.overview => GetBuilder<PlaybackController>(
               builder: (player) => _LibraryOverview(
                 player: player,
+                playlists: playlists,
+                loggedIn: authentication.isLoggedIn,
                 favoriteSubtitle: _favoriteCardSubtitle(
                   authentication,
                   favorites,
                 ),
-                onOpenFavorites: () =>
-                    unawaited(_openFavorites(authentication, favorites)),
+                onOpenFavorites: () => unawaited(
+                  _openFavorites(authentication, favorites, playlists),
+                ),
+                onLoginForPlaylists: () => _loginForPlaylists(playlists),
+                onOpenPlaylist: (playlist) =>
+                    _openPlaylist(playlist, favorites),
               ),
             ),
+          };
+        },
+      ),
     ),
   );
 }
@@ -66,13 +128,21 @@ final class _LibraryPageState extends State<LibraryPage> {
 final class _LibraryOverview extends StatelessWidget {
   const _LibraryOverview({
     required this.player,
+    required this.playlists,
+    required this.loggedIn,
     required this.favoriteSubtitle,
     required this.onOpenFavorites,
+    required this.onLoginForPlaylists,
+    required this.onOpenPlaylist,
   });
 
   final PlaybackController player;
+  final UserPlaylistsController playlists;
+  final bool loggedIn;
   final String favoriteSubtitle;
   final VoidCallback onOpenFavorites;
+  final Future<void> Function() onLoginForPlaylists;
+  final Future<void> Function(UserPlaylist playlist) onOpenPlaylist;
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +163,14 @@ final class _LibraryOverview extends StatelessWidget {
           asset: 'assets/images/favorites.png',
           onPressed: onOpenFavorites,
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 28),
+        UserPlaylistsSection(
+          controller: playlists,
+          loggedIn: loggedIn,
+          onLogin: onLoginForPlaylists,
+          onOpenPlaylist: onOpenPlaylist,
+        ),
+        const SizedBox(height: 28),
         LayoutBuilder(
           builder: (context, constraints) => Row(
             children: <Widget>[
@@ -127,7 +204,21 @@ final class _LibraryOverview extends StatelessWidget {
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
             const Spacer(),
-            Text('${recentTracks.length} 首'),
+            TextButton.icon(
+              key: const ValueKey<String>('clear-recent-tracks'),
+              onPressed: recentTracks.isEmpty
+                  ? null
+                  : () => unawaited(
+                      _confirmAndClearRecentTracks(context, player),
+                    ),
+              icon: const Icon(Icons.delete_sweep_outlined, size: 19),
+              label: const Text('清空列表'),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              '${recentTracks.length} 首',
+              key: const ValueKey<String>('recent-tracks-count'),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -144,15 +235,25 @@ String _favoriteCardSubtitle(
   AuthenticationController authentication,
   FavoriteTracksController favorites,
 ) {
-  if (!authentication.isLoggedIn) return '登录酷狗后查看“我喜欢”中的歌曲';
-  if (favorites.loading) return '正在从酷狗同步收藏…';
+  if (!authentication.isLoggedIn) return '登录酷狗后查看“我喜欢”歌单';
+  if (favorites.loading && favorites.tracks.isEmpty) {
+    return '正在从酷狗同步“我喜欢”…';
+  }
   if (favorites.error != null && favorites.tracks.isEmpty) {
     return '同步失败，点击进入后重试';
   }
-  if (favorites.loaded) {
-    return favorites.totalCount == 0
-        ? '当前账号还没有收藏歌曲'
-        : '${favorites.totalCount} 首收藏歌曲';
-  }
-  return '按需从酷狗账号同步，不影响音乐库打开速度';
+  if (favorites.loaded) return '${favorites.totalCount} 首收藏歌曲';
+  return '直接进入酷狗账号的“我喜欢”歌单';
+}
+
+Future<void> _confirmAndClearRecentTracks(
+  BuildContext context,
+  PlaybackController player,
+) async {
+  final confirmed = await confirmListClear(
+    context,
+    listName: '最近播放',
+    itemCount: player.recentTracks.length,
+  );
+  if (confirmed) await player.clearRecentTracks();
 }

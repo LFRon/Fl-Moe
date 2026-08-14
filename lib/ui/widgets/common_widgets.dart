@@ -101,3 +101,53 @@ void showReservedFeature(BuildContext context, String feature) {
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text('$feature入口已经保留，将在桌面适配阶段接入。')));
 }
+
+Future<bool> confirmListClear(
+  BuildContext context, {
+  required String listName,
+  required int itemCount,
+  String? consequence,
+}) async {
+  Future<void>? dialogCompleted;
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) {
+      dialogCompleted = ModalRoute.of(
+        dialogContext,
+      )?.completed.then<void>((_) {});
+      return AlertDialog(
+        key: const ValueKey<String>('confirm-list-clear-dialog'),
+        icon: const Icon(Icons.delete_sweep_outlined),
+        title: Text('清空$listName？'),
+        content: Text(
+          <String>[
+            '确定要清空$listName中的 $itemCount 首歌曲吗？',
+            ?consequence,
+            '这只会清空列表，不会删除歌曲文件。',
+          ].join('\n'),
+        ),
+        actions: <Widget>[
+          TextButton(
+            key: const ValueKey<String>('cancel-list-clear'),
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            key: const ValueKey<String>('confirm-list-clear'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(dialogContext).colorScheme.error,
+              foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('清空'),
+          ),
+        ],
+      );
+    },
+  );
+  // A pushed route's result completes when pop starts, while its overlay may
+  // still be reversing. Wait for actual removal before rebuilding the list
+  // beneath it, keeping semantics/render trees coherent on desktop Flutter.
+  await dialogCompleted;
+  return confirmed ?? false;
+}
