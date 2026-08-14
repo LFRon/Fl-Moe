@@ -20,12 +20,20 @@ final class _DiscoverPageState extends State<DiscoverPage> {
   @override
   void initState() {
     super.initState();
-    unawaited(Get.find<MusicCatalogController>().loadDiscoverCatalog());
+    final catalog = Get.find<MusicCatalogController>();
+    // Animated page switching keeps the outgoing page mounted. Starting here
+    // synchronously would notify its GetBuilder while the new page is building.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(catalog.loadDiscoverCatalog());
+    });
   }
 
   @override
   Widget build(BuildContext context) => GetBuilder<MusicCatalogController>(
     builder: (catalog) {
+      final initialLoadPending =
+          !catalog.discoverLoaded && catalog.discoverError == null;
+      final showLoading = catalog.discoverLoading || initialLoadPending;
       return SilkyListView(
         silkyConfig: flMoeSmoothScrollConfig,
         padding: const EdgeInsets.fromLTRB(28, 24, 28, 32),
@@ -34,7 +42,7 @@ final class _DiscoverPageState extends State<DiscoverPage> {
             title: '发现音乐',
             subtitle: '歌单与排行榜都来自内嵌的纯 Dart 酷狗 API',
             trailing: FilledButton.tonalIcon(
-              onPressed: catalog.discoverLoading
+              onPressed: showLoading
                   ? null
                   : () => unawaited(catalog.refreshDiscoverCatalog()),
               icon: const Icon(Icons.refresh_rounded),
@@ -52,10 +60,7 @@ final class _DiscoverPageState extends State<DiscoverPage> {
           if (catalog.discoverCollections.isNotEmpty)
             CollectionGrid(collections: catalog.discoverCollections)
           else
-            LoadingOrError(
-              loading: catalog.discoverLoading,
-              error: catalog.discoverError,
-            ),
+            LoadingOrError(loading: showLoading, error: catalog.discoverError),
           const SizedBox(height: 34),
           Text(
             '酷狗排行榜',
@@ -67,10 +72,7 @@ final class _DiscoverPageState extends State<DiscoverPage> {
           if (catalog.rankings.isNotEmpty)
             CollectionGrid(collections: catalog.rankings)
           else
-            LoadingOrError(
-              loading: catalog.discoverLoading,
-              error: catalog.discoverError,
-            ),
+            LoadingOrError(loading: showLoading, error: catalog.discoverError),
         ],
       );
     },

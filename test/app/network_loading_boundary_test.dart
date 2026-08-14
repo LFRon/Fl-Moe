@@ -5,6 +5,7 @@ import 'package:fl_moe/features/auth/authentication_controller.dart';
 import 'package:fl_moe/features/music/music_catalog_controller.dart';
 import 'package:fl_moe/features/navigation/app_navigation_controller.dart';
 import 'package:fl_moe/kugou_api.dart';
+import 'package:fl_moe/ui/app_page_transition.dart';
 import 'package:fl_moe/ui/pages/discover_page/discover_page.dart';
 import 'package:fl_moe/ui/pages/home_page/home_page.dart';
 import 'package:fl_moe/ui/pages/home_page/widgets/catalog_skeleton.dart';
@@ -99,6 +100,62 @@ void main() {
       hasLength(1),
     );
     expect(backend.callCount, 4);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('animated navigation starts discover loading after page build', (
+    tester,
+  ) async {
+    Get.testMode = true;
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      Get.reset();
+    });
+    final backend = _PendingMusicBackend();
+    Get.put<AuthenticationController>(AuthenticationController(backend));
+    Get.put<MusicCatalogController>(MusicCatalogController(backend));
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: FlMoePageTransition(
+            section: AppSection.home,
+            child: HomePage(),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: FlMoePageTransition(
+            section: AppSection.discover,
+            child: DiscoverPage(),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(
+      backend.routes.where((route) => route == '/rank/list'),
+      hasLength(1),
+    );
+    expect(find.byType(HomePage), findsOneWidget);
+    expect(find.byType(DiscoverPage), findsOneWidget);
+
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    expect(find.byType(HomePage), findsNothing);
+    expect(find.byType(DiscoverPage), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
