@@ -137,22 +137,57 @@ final class MusicCollectionDetailController extends GetxController {
   /// Fetches a collection without changing the collection-detail page state.
   /// This keeps quick-play actions independent from navigation.
   Future<List<MusicTrack>> fetchTracks(MusicCollection collection) async {
-    if (collection.id.isEmpty) {
-      throw StateError('该内容缺少酷狗集合 ID');
+    if (collection.id.isEmpty && collection.accountListId.isEmpty) {
+      throw StateError('该内容缺少酷狗歌单 ID');
     }
-    final response = switch (collection.kind) {
-      MusicCollectionKind.playlist => await _api.playlistTracks(
-        KugouPlaylistTracksQuery(collectionId: collection.id, pageSize: 100),
+    if (collection.kind == MusicCollectionKind.playlist) {
+      return _fetchPlaylistTracks(collection);
+    }
+    final response = await _api.callJson(
+      '/rank/audio',
+      parameters: <String, Object?>{
+        'rankid': collection.id,
+        'page': 1,
+        'pagesize': 100,
+      },
+    );
+    return _tracksFromResponse(response);
+  }
+
+  Future<List<MusicTrack>> _fetchPlaylistTracks(
+    MusicCollection collection,
+  ) async {
+    if (collection.id.isNotEmpty) {
+      try {
+        final tracks = _tracksFromResponse(
+          await _api.playlistTracks(
+            KugouPlaylistTracksQuery(
+              collectionId: collection.id,
+              pageSize: 100,
+            ),
+          ),
+        );
+        if (tracks.isNotEmpty || collection.accountListId.isEmpty) {
+          return tracks;
+        }
+      } on Object {
+        if (collection.accountListId.isEmpty) rethrow;
+        // Private/newly-created lists can reject the public collection route.
+      }
+    }
+    return _tracksFromResponse(
+      await _api.userPlaylistTracks(
+        KugouUserPlaylistTracksQuery(
+          listId: collection.accountListId,
+          pageSize: 100,
+        ),
       ),
-      MusicCollectionKind.ranking => await _api.callJson(
-        '/rank/audio',
-        parameters: <String, Object?>{
-          'rankid': collection.id,
-          'page': 1,
-          'pagesize': 100,
-        },
-      ),
-    };
+    );
+  }
+
+  List<MusicTrack> _tracksFromResponse(
+    KugouResponse<KugouJsonObject> response,
+  ) {
     final objects = findObjectList(response.body, const <String>[
       'songlist',
       'songs',

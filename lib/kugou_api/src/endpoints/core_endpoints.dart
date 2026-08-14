@@ -5,6 +5,7 @@ import '../utilities.dart';
 Map<String, KugouEndpointHandler> createCoreEndpointHandlers() =>
     <String, KugouEndpointHandler>{
       '/search': _search,
+      '/search/lyric': _searchLyric,
       '/song/url': _songUrl,
       '/playlist/track/all': _playlistTrackAll,
       '/lyric': _lyric,
@@ -30,6 +31,32 @@ Future<KugouResponse<Object?>> _search(
         'platform': 'AndroidFilter',
       },
       headers: const <String, Object?>{'x-router': 'complexsearch.kugou.com'},
+    ),
+  );
+}
+
+Future<KugouResponse<Object?>> _searchLyric(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) {
+  // The current lyrics service returns an empty body (x-kg-errcode 20010)
+  // for the newer /v1/search shape used by the generated compatibility
+  // endpoint. The desktop-compatible endpoint remains the source used by the
+  // KuGou clients and returns the same candidates contract.
+  return context.request(
+    KugouRequest(
+      baseUri: Uri.parse('https://lyrics.kugou.com'),
+      path: '/search',
+      parameters: <String, Object?>{
+        'ver': 1,
+        'man': 'yes',
+        'client': 'pc',
+        'keyword': stringParameter(input, 'keywords'),
+        'duration': intParameter(input, 'duration'),
+        'hash': stringParameter(input, 'hash'),
+      },
+      clearDefaultParameters: true,
+      skipSignature: true,
     ),
   );
 }

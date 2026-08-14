@@ -198,6 +198,28 @@ final class KugouLyricsQuery {
   };
 }
 
+final class KugouLyricSearchQuery {
+  const KugouLyricSearchQuery({
+    required this.hash,
+    this.albumAudioId = 0,
+    this.duration = Duration.zero,
+    this.keywords = '',
+  }) : assert(hash.length > 0),
+       assert(albumAudioId >= 0);
+
+  final String hash;
+  final int albumAudioId;
+  final Duration duration;
+  final String keywords;
+
+  KugouJsonObject toParameters() => <String, Object?>{
+    'hash': hash,
+    'album_audio_id': albumAudioId,
+    'duration': duration.inMilliseconds,
+    if (keywords.isNotEmpty) 'keywords': keywords,
+  };
+}
+
 final class KugouCloudPageQuery {
   const KugouCloudPageQuery({this.page = 1, this.pageSize = 30})
     : assert(page > 0),

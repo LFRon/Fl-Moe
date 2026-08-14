@@ -21,7 +21,9 @@ final class MusicTrack {
     final audioInfo =
         asJsonObject(json['audio_info']) ?? const <String, Object?>{};
     final albumInfo =
-        asJsonObject(json['album_info']) ?? const <String, Object?>{};
+        asJsonObject(json['album_info']) ??
+        asJsonObject(json['albuminfo']) ??
+        const <String, Object?>{};
     final transParam =
         asJsonObject(json['trans_param']) ?? const <String, Object?>{};
     final deprecated =
@@ -37,12 +39,29 @@ final class MusicTrack {
       'FileName',
       'filename',
     ]);
-    final artist = readString(json, const <String>[
+    final directArtist = readString(json, const <String>[
       'SingerName',
       'singername',
       'author_name',
       'author',
       'singer_name',
+    ]);
+    final nestedArtist = _firstNonEmpty(<String>[
+      _readArtistNames(json),
+      readString(audioInfo, const <String>[
+        'SingerName',
+        'singername',
+        'author_name',
+        'author',
+        'singer_name',
+      ]),
+      _readArtistNames(audioInfo),
+    ]);
+    final inferredArtist = _artistPrefixFromTitle(rawTitle);
+    final artist = _firstNonEmpty(<String>[
+      directArtist,
+      nestedArtist,
+      inferredArtist,
     ]);
     final title = _withoutArtistPrefix(rawTitle, artist);
     final directHash = readString(json, const <String>[
@@ -117,19 +136,29 @@ final class MusicTrack {
     );
   }
 
-  factory MusicTrack.fromJson(JsonObject json) => MusicTrack(
-    id: readString(json, const <String>['id']),
-    hash: readString(json, const <String>['hash']),
-    title: readString(json, const <String>['title']),
-    artist: readString(json, const <String>['artist']),
-    album: readString(json, const <String>['album']),
-    coverUrl: readString(json, const <String>['coverUrl']),
-    duration: Duration(
-      milliseconds: readInt(json, const <String>['durationMs']),
-    ),
-    albumId: readInt(json, const <String>['albumId']),
-    albumAudioId: readInt(json, const <String>['albumAudioId']),
-  );
+  factory MusicTrack.fromJson(JsonObject json) {
+    final storedTitle = readString(json, const <String>['title']);
+    final storedArtist = readString(json, const <String>['artist']);
+    final inferredArtist = storedArtist.isEmpty || storedArtist == '未知歌手'
+        ? _artistPrefixFromTitle(storedTitle)
+        : '';
+    final artist = inferredArtist.isEmpty ? storedArtist : inferredArtist;
+    return MusicTrack(
+      id: readString(json, const <String>['id']),
+      hash: readString(json, const <String>['hash']),
+      title: inferredArtist.isEmpty
+          ? storedTitle
+          : _withoutArtistPrefix(storedTitle, inferredArtist),
+      artist: artist.isEmpty ? '未知歌手' : artist,
+      album: readString(json, const <String>['album']),
+      coverUrl: readString(json, const <String>['coverUrl']),
+      duration: Duration(
+        milliseconds: readInt(json, const <String>['durationMs']),
+      ),
+      albumId: readInt(json, const <String>['albumId']),
+      albumAudioId: readInt(json, const <String>['albumAudioId']),
+    );
+  }
 
   final String id;
   final String hash;
@@ -163,6 +192,41 @@ String _firstNonEmpty(List<String> values) {
   return '';
 }
 
+String _readArtistNames(JsonObject json) {
+  for (final key in const <String>[
+    'singerinfo',
+    'singer_info',
+    'authors',
+    'singers',
+  ]) {
+    final raw = json[key];
+    final objects = <JsonObject>[..._objectsFromList(raw), ?asJsonObject(raw)];
+    final names = <String>[];
+    final seen = <String>{};
+    for (final object in objects) {
+      final name = readString(object, const <String>[
+        'name',
+        'author_name',
+        'singername',
+        'SingerName',
+      ]);
+      if (name.isNotEmpty && seen.add(name)) names.add(name);
+    }
+    if (names.isNotEmpty) return names.join('、');
+  }
+  return '';
+}
+
+String _artistPrefixFromTitle(String title) {
+  for (final separator in const <String>[' - ', ' — ', ' – ']) {
+    final index = title.indexOf(separator);
+    if (index > 0 && index + separator.length < title.length) {
+      return title.substring(0, index).trim();
+    }
+  }
+  return '';
+}
+
 String _withoutArtistPrefix(String title, String artist) {
   if (title.isEmpty || artist.isEmpty) return title;
   for (final separator in const <String>[' - ', ' — ', ' – ']) {
@@ -179,6 +243,7 @@ final class MusicCollection {
     required this.id,
     required this.title,
     required this.kind,
+    this.accountListId = '',
     this.subtitle = '',
     this.coverUrl = '',
     this.playCount = 0,
@@ -190,6 +255,7 @@ final class MusicCollection {
   }) => MusicCollection(
     id: readString(json, const <String>[
       'global_collection_id',
+      'list_create_gid',
       'specialid',
       'special_id',
       'collect_id',
@@ -208,8 +274,10 @@ final class MusicCollection {
       'description',
       'update_frequency',
     ]),
+    accountListId: readString(json, const <String>['listid', 'list_id']),
     coverUrl: normalizeImageUrl(
       readString(json, const <String>[
+        'pic',
         'imgurl',
         'img',
         'image',
@@ -224,6 +292,10 @@ final class MusicCollection {
   final String id;
   final String title;
   final MusicCollectionKind kind;
+
+  /// Account-scoped ID used by `/playlist/track/all/new` when a private user
+  /// playlist has no public collection ID or the public route rejects it.
+  final String accountListId;
   final String subtitle;
   final String coverUrl;
   final int playCount;

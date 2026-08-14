@@ -79,6 +79,57 @@ void main() {
     );
   });
 
+  test(
+    'lyrics use the working desktop search contract and decode KRC',
+    () async {
+      final transport = _TypedTransport()
+        ..body = <String, Object?>{
+          'status': 200,
+          'candidates': <Object?>[
+            <String, Object?>{'id': 'lyric-id', 'accesskey': 'lyric-key'},
+          ],
+        };
+      final api = KugouApi(transport: transport);
+      addTearDown(api.close);
+
+      final search = await api.searchLyrics(
+        const KugouLyricSearchQuery(
+          hash: 'TRACK-HASH',
+          albumAudioId: 123,
+          duration: Duration(milliseconds: 215000),
+          keywords: '测试歌手 - 测试歌曲',
+        ),
+      );
+
+      expect(search.body['candidates'], isA<List<Object?>>());
+      expect(search.body['candidates']! as List<Object?>, hasLength(1));
+      final searchRequest = transport.requests.single;
+      expect(searchRequest.uri.host, 'lyrics.kugou.com');
+      expect(searchRequest.uri.path, '/search');
+      expect(searchRequest.parameters, <String, Object?>{
+        'ver': 1,
+        'man': 'yes',
+        'client': 'pc',
+        'keyword': '测试歌手 - 测试歌曲',
+        'duration': 215000,
+        'hash': 'TRACK-HASH',
+      });
+
+      transport.body = <String, Object?>{
+        'status': 200,
+        'contenttype': 0,
+        'content':
+            'a3JjMTjb6rkSg74J3tO7G/5iXFmUdFH/I4ADhoKTSvIhOxfbI52S3mMyo2te4A==',
+      };
+      final lyrics = await api.lyrics(
+        const KugouLyricsQuery(id: 'lyric-id', accessKey: 'lyric-key'),
+      );
+
+      expect(lyrics.body['decodeContent'], '[id:kg]\n[00:01.00]你好，世界');
+      expect(transport.requests.last.uri.path, '/download');
+    },
+  );
+
   test('typed JSON boundary rejects a non-object response', () async {
     final transport = _TypedTransport()..body = 'not-json';
     final api = KugouApi(transport: transport);

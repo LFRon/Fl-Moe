@@ -58,6 +58,35 @@ void main() {
     expect(track.albumAudioId, 9988);
   });
 
+  test('parses nested singers and album returned by public playlists', () {
+    final track = MusicTrack.fromKugou(<String, Object?>{
+      'name': '歌手甲、歌手乙 - 合唱歌曲',
+      'hash': 'PUBLIC-PLAYLIST-HASH',
+      'mixsongid': 778899,
+      'timelen': 201234,
+      'singerinfo': <Object?>[
+        <String, Object?>{'name': '歌手甲', 'id': 1},
+        <String, Object?>{'name': '歌手乙', 'id': 2},
+      ],
+      'albuminfo': <String, Object?>{'name': '测试专辑', 'id': 33},
+    });
+
+    expect(track.title, '合唱歌曲');
+    expect(track.artist, '歌手甲、歌手乙');
+    expect(track.album, '测试专辑');
+    expect(track.albumAudioId, 778899);
+  });
+
+  test('falls back to the conventional artist prefix in a KuGou name', () {
+    final track = MusicTrack.fromKugou(<String, Object?>{
+      'name': '备用歌手 - 备用歌曲',
+      'hash': 'FALLBACK-HASH',
+    });
+
+    expect(track.title, '备用歌曲');
+    expect(track.artist, '备用歌手');
+  });
+
   test('recent-track JSON round-trips through typed models', () {
     const track = MusicTrack(
       id: '1',
@@ -72,5 +101,18 @@ void main() {
     expect(restored.hash, track.hash);
     expect(restored.title, track.title);
     expect(restored.duration, track.duration);
+  });
+
+  test('repairs cached tracks written before nested singers were supported', () {
+    final restored = MusicTrack.fromJson(<String, Object?>{
+      'id': '1',
+      'hash': 'OLD-CACHE-HASH',
+      'title': '缓存歌手 - 缓存歌曲',
+      'artist': '未知歌手',
+      'durationMs': 180000,
+    });
+
+    expect(restored.title, '缓存歌曲');
+    expect(restored.artist, '缓存歌手');
   });
 }
