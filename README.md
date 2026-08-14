@@ -12,9 +12,9 @@ Fl-Moe 是面向 Windows 与 GNU/Linux 的 Flutter 萌音客户端。它保留�
 - 默认网络层为 Dio，网络层通过 `KugouHttpTransport` 抽象，可在测试中完全替换。
 - 已实现标准版/概念版签名、会话与设备身份、Cookie、AES、RSA、KRC、SSA、登录、二维码、云盘分片上传和听歌等级双协议。
 - Analyzer 开启 strict casts、strict inference 与 strict raw types；运行时代码不使用 `dynamic`、反射或运行时脚本解释。
-- 已实现 Material You 桌面外壳、自定义标题栏、可切换左右位置的窗口控制键、侧边导航、首页、发现、歌单/排行详情、搜索、音乐库、云盘入口、设置和常驻播放器。
-- 播放器使用 `media_kit`；登录后先通过 `/privilege/lite` 解析账号可用音质对应的真实 hash，再请求播放 URL。网络封面使用 `cached_network_image_ce`；二维码 API 只返回 URL，由 `pretty_qr_code` 在 Flutter UI 本地绘制。
-- 桌面歌词与状态栏歌词本阶段只保留按钮，不绑定 Treeland 私有协议；系统托盘同样保留在可替换的窗口服务边界之后。
+- 已实现 Material You 桌面外壳、自定义标题栏、可切换左右位置的窗口控制键、侧边导航、首页、发现、歌单/排行详情、搜索、音乐库、云盘入口、设置和常驻播放器；音乐库中的“我的收藏”直达“我喜欢”，账号其他歌单则在首页按创建/收藏范围筛选展示。
+- 播放器使用 `media_kit`；登录后先通过 `/privilege/lite` 解析账号可用音质对应的真实 hash，再请求播放 URL。顺序、随机和列表循环都使用用户开始播放时所在的歌单、专辑或结果列表作为内存来源上下文，不提供可编辑的“播放队列”；切换到另一个列表中的歌曲会同步替换该上下文。最近播放支持确认后整表清空；最近播放与当前歌曲保存到 Hive，来源上下文不持久化，冷启动只离线恢复当前歌曲元数据，用户首次按播放时才解析 URL 并初始化音频。网络封面使用 `cached_network_image_ce`；二维码 API 只返回 URL，由 `pretty_qr_code` 在 Flutter UI 本地绘制。
+- 桌面歌词与状态栏歌词本阶段只保留按钮，不绑定 Treeland 私有协议。系统托盘已作为桌面音乐播放器的常驻能力启用，提供显示/隐藏窗口、上一首、播放/暂停、下一首和退出。
 
 ## 运行
 
@@ -74,9 +74,9 @@ Hive CE 数据与 MoeKoe Music 完全隔离：
 - Windows 配置：`%APPDATA%\Fl-Moe`
 - Windows 数据与缓存：`%LOCALAPPDATA%\Fl-Moe`
 
-主题、强调色和窗口按钮位置即时持久化；播放历史存入单独的 `library` box。
+主题、强调色和窗口按钮位置即时持久化；最近播放和当前歌曲存入单独的 `library` box，应用不会保存或恢复来源列表，也不会在重启后自动播放或主动联网。升级时会从旧 `player_playback_state` 中保留当前歌曲到 `player_current_track`，随后删除其中已经废弃的队列数据。关闭键在托盘可用时固定隐藏主窗口，不再保存“关闭到托盘”开关；升级时会清除旧 `close_to_tray` 键。
 
-窗口操作通过 `DesktopWindowService` 隔离。当前使用成熟的 `window_manager` 实现；`nativeapi` 仍处于 WIP，因此暂不让其不稳定接口进入主线，后续可在不改 Widget 的情况下替换。
+窗口操作通过 `DesktopWindowService` 隔离，当前使用 Fl-Moe 魔改版 NativeApi；托盘能力通过独立的 `DesktopTrayService` 隔离。
 
 ## 验证
 
@@ -118,6 +118,6 @@ dart format lib/kugou_api/src/endpoints/generated_endpoints.dart
 
 ## 平台方向
 
-GNU/Linux 优先开发，在 Wayland 会话中使用原生 Wayland，同时保留 X11；Windows 保持可运行。Linux 发行以如意玲珑的差分更新/可选自动升级为准，应用内不重复实现完整更新器。媒体会话、桌面歌词、状态栏歌词、系统托盘与 xdg-desktop-portal 全局快捷键属于后续平台阶段，不与内嵌 API 或 UI 页面耦合。
+GNU/Linux 优先开发，在 Wayland 会话中使用原生 Wayland，同时保留 X11；Windows 保持可运行。Linux 发行以如意玲珑的差分更新/可选自动升级为准，应用内不重复实现完整更新器。媒体会话、桌面歌词、状态栏歌词与 xdg-desktop-portal 全局快捷键属于后续平台阶段，不与内嵌 API、现有托盘服务或 UI 页面耦合。
 
 许可证：GPL-2.0-only。
