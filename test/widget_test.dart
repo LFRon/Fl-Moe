@@ -1,9 +1,11 @@
 import 'package:fl_moe/app/app_theme.dart';
 import 'package:fl_moe/core/backend/music_backend.dart';
 import 'package:fl_moe/core/storage/key_value_store.dart';
+import 'package:fl_moe/core/tray/desktop_tray_service.dart';
 import 'package:fl_moe/core/window/desktop_window_service.dart';
 import 'package:fl_moe/features/auth/authentication_controller.dart';
 import 'package:fl_moe/features/auth/kugou_user_profile.dart';
+import 'package:fl_moe/features/navigation/app_navigation_controller.dart';
 import 'package:fl_moe/features/player/audio_engine.dart';
 import 'package:fl_moe/features/player/playback_controller.dart';
 import 'package:fl_moe/features/settings/app_settings_controller.dart';
@@ -11,6 +13,7 @@ import 'package:fl_moe/kugou_api.dart';
 import 'package:fl_moe/ui/player_bar.dart';
 import 'package:fl_moe/ui/widgets/loading_skeletons.dart';
 import 'package:fl_moe/ui/widgets/network_artwork.dart';
+import 'package:fl_moe/ui/window_resize_frame.dart';
 import 'package:fl_moe/ui/window_title_bar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -108,7 +111,12 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: FlMoeTheme.light(const Color(0xFF4C9BE8)),
-        home: Scaffold(body: FlMoeTitleBar(window: _RecordingWindowService())),
+        home: Scaffold(
+          body: FlMoeTitleBar(
+            window: _RecordingWindowService(),
+            tray: const NoopDesktopTrayService(),
+          ),
+        ),
       ),
     );
 
@@ -128,6 +136,62 @@ void main() {
     expect(avatar.size, 30);
     expect(avatar.borderRadius, 15);
     await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('close button always hides the window when tray is available', (
+    tester,
+  ) async {
+    Get.testMode = true;
+    addTearDown(Get.reset);
+    const backend = _IdleMusicBackend();
+    Get.put<AppSettingsController>(
+      AppSettingsController.load(MemoryKeyValueStore()),
+    );
+    Get.put<AuthenticationController>(AuthenticationController(backend));
+    final window = _RecordingWindowService();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FlMoeTitleBar(
+            window: window,
+            tray: const _AvailableTrayService(),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('关闭'));
+    await tester.pump();
+    expect(window.actions, <String>['hide']);
+  });
+
+  testWidgets('close button closes safely when tray is unavailable', (
+    tester,
+  ) async {
+    Get.testMode = true;
+    addTearDown(Get.reset);
+    const backend = _IdleMusicBackend();
+    Get.put<AppSettingsController>(
+      AppSettingsController.load(MemoryKeyValueStore()),
+    );
+    Get.put<AuthenticationController>(AuthenticationController(backend));
+    final window = _RecordingWindowService();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FlMoeTitleBar(
+            window: window,
+            tray: const NoopDesktopTrayService(),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('关闭'));
+    await tester.pump();
+    expect(window.actions, <String>['close']);
   });
 
   testWidgets('player trailing controls use compact optical spacing', (
@@ -187,6 +251,42 @@ void main() {
     expect(find.byTooltip('播放模式：单曲循环'), findsOneWidget);
   });
 
+  testWidgets('player bar has no visible or editable playback queue', (
+    tester,
+  ) async {
+    Get.testMode = true;
+    await tester.binding.setSurfaceSize(const Size(1200, 700));
+    addTearDown(() async {
+      await tester.binding.setSurfaceSize(null);
+      Get.reset();
+    });
+    Get.put<PlaybackController>(
+      PlaybackController(
+        const _IdleMusicBackend(),
+        NoopAudioEngine(),
+        MemoryKeyValueStore(),
+      ),
+    );
+    Get.put<AppNavigationController>(AppNavigationController());
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: FlMoeTheme.light(const Color(0xFF4C9BE8)),
+        home: const Scaffold(body: PlayerBar()),
+      ),
+    );
+
+    expect(find.byTooltip('播放队列'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('clear-playback-queue')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('playback-queue-count')),
+      findsNothing,
+    );
+  });
+
   testWidgets('Linux drag starts on pointer down while a skeleton animates', (
     tester,
   ) async {
@@ -206,7 +306,7 @@ void main() {
           home: Scaffold(
             body: Column(
               children: <Widget>[
-                FlMoeTitleBar(window: window),
+                FlMoeTitleBar(window: window, tray: NoopDesktopTrayService()),
                 const Expanded(
                   child: FlMoeSkeletonScope(
                     child: Center(
@@ -236,6 +336,58 @@ void main() {
       expect(window.actions, <String>['drag', 'drag', 'maximize']);
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pumpWidget(const SizedBox.shrink());
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
+  testWidgets('Linux frameless window exposes resize edges and corners', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    try {
+      final window = _RecordingWindowService();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: WindowResizeFrame(
+            window: window,
+            child: const ColoredBox(color: Colors.black),
+          ),
+        ),
+      );
+
+      expect(find.byKey(const ValueKey<String>('window-resize-top')), findsOne);
+      expect(
+        find.byKey(const ValueKey<String>('window-resize-bottom-right')),
+        findsOne,
+      );
+      expect(
+        tester
+            .getSize(find.byKey(const ValueKey<String>('window-resize-top')))
+            .height,
+        3,
+      );
+      expect(
+        tester.getSize(
+          find.byKey(const ValueKey<String>('window-resize-bottom-right')),
+        ),
+        const Size.square(8),
+      );
+      final cornerRegion = tester.widget<MouseRegion>(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('window-resize-bottom-right')),
+          matching: find.byType(MouseRegion),
+        ),
+      );
+      expect(cornerRegion.cursor, SystemMouseCursors.resizeDownRight);
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(
+          find.byKey(const ValueKey<String>('window-resize-bottom-right')),
+        ),
+      );
+      expect(window.actions, <String>['resize']);
+      await gesture.up();
     } finally {
       debugDefaultTargetPlatformOverride = null;
     }
@@ -310,17 +462,48 @@ final class _RecordingWindowService implements DesktopWindowService {
   final List<String> actions = <String>[];
 
   @override
+  bool get isVisible => true;
+
+  @override
   Future<void> close() async => actions.add('close');
 
   @override
   Future<void> initialize() async {}
 
   @override
+  Future<void> hide() async => actions.add('hide');
+
+  @override
   Future<void> minimize() async => actions.add('minimize');
+
+  @override
+  Future<void> show() async => actions.add('show');
 
   @override
   Future<void> startDragging() async => actions.add('drag');
 
   @override
+  Future<void> startResizing() async => actions.add('resize');
+
+  @override
   Future<void> toggleMaximize() async => actions.add('maximize');
+
+  @override
+  Future<void> toggleVisibility() async => actions.add('toggle-visibility');
+}
+
+final class _AvailableTrayService implements DesktopTrayService {
+  const _AvailableTrayService();
+
+  @override
+  bool get isAvailable => true;
+
+  @override
+  Future<void> dispose() async {}
+
+  @override
+  Future<void> initialize({
+    required DesktopWindowService window,
+    required PlaybackController playback,
+  }) async {}
 }

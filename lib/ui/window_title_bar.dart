@@ -5,17 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../core/window/desktop_window_service.dart';
+import '../core/tray/desktop_tray_service.dart';
 import '../features/auth/authentication_controller.dart';
 import '../features/music/music_catalog_controller.dart';
 import '../features/navigation/app_navigation_controller.dart';
 import '../features/settings/app_settings_controller.dart';
 import 'login_dialog.dart';
 import 'widgets/network_artwork.dart';
+import 'window_drag_region.dart';
 
 final class FlMoeTitleBar extends StatefulWidget {
-  const FlMoeTitleBar({required this.window, super.key});
+  const FlMoeTitleBar({required this.window, required this.tray, super.key});
 
   final DesktopWindowService window;
+  final DesktopTrayService tray;
 
   @override
   State<FlMoeTitleBar> createState() => _FlMoeTitleBarState();
@@ -61,12 +64,23 @@ final class _FlMoeTitleBarState extends State<FlMoeTitleBar> {
     }
   }
 
+  Future<void> _closeWindow() async {
+    if (widget.tray.isAvailable) {
+      await widget.window.hide();
+      return;
+    }
+    await widget.window.close();
+  }
+
   @override
   Widget build(BuildContext context) => GetBuilder<AppSettingsController>(
     builder: (settings) => GetBuilder<AuthenticationController>(
       builder: (authentication) {
         final controlSide = settings.windowControlSide;
-        final controls = FlMoeWindowControls(window: widget.window);
+        final controls = FlMoeWindowControls(
+          window: widget.window,
+          onClose: _closeWindow,
+        );
         return Material(
           color: Theme.of(context).colorScheme.surface,
           child: SizedBox(
@@ -86,7 +100,7 @@ final class _FlMoeTitleBarState extends State<FlMoeTitleBar> {
                   onPressed: () => unawaited(_refreshCurrentContent()),
                   icon: const Icon(Icons.refresh_rounded, size: 20),
                 ),
-                _DragRegion(window: widget.window, width: 24),
+                FlMoeWindowDragRegion(window: widget.window, width: 24),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 430),
                   child: SizedBox(
@@ -114,7 +128,7 @@ final class _FlMoeTitleBarState extends State<FlMoeTitleBar> {
                   ),
                 ),
                 Expanded(
-                  child: _DragRegion(
+                  child: FlMoeWindowDragRegion(
                     key: const ValueKey<String>('window-drag-region'),
                     window: widget.window,
                   ),
@@ -189,39 +203,11 @@ final class _FlMoeTitleBarState extends State<FlMoeTitleBar> {
   );
 }
 
-final class _DragRegion extends StatelessWidget {
-  const _DragRegion({required this.window, this.width, super.key});
-
-  final DesktopWindowService window;
-  final double? width;
-
-  void _startDragging() => unawaited(window.startDragging());
-
-  @override
-  Widget build(BuildContext context) {
-    // GTK's move-drag request should be made while the initiating button
-    // press is still current. Waiting for pan recognition is noticeably less
-    // reliable on Wayland when the UI is painting an animated loading state.
-    // Windows keeps pan-start activation so a click/double-click does not
-    // enter its synchronous native move loop.
-    final dragOnPointerDown = defaultTargetPlatform == TargetPlatform.linux;
-    return SizedBox(
-      width: width,
-      height: double.infinity,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onPanDown: dragOnPointerDown ? (details) => _startDragging() : null,
-        onPanStart: dragOnPointerDown ? null : (details) => _startDragging(),
-        onDoubleTap: () => unawaited(window.toggleMaximize()),
-      ),
-    );
-  }
-}
-
 final class FlMoeWindowControls extends StatelessWidget {
-  const FlMoeWindowControls({required this.window, super.key});
+  const FlMoeWindowControls({required this.window, this.onClose, super.key});
 
   final DesktopWindowService window;
+  final AsyncCallback? onClose;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -247,7 +233,7 @@ final class FlMoeWindowControls extends StatelessWidget {
           tooltip: '关闭',
           color: const Color(0xFFFF5F57),
           icon: Icons.close_rounded,
-          onPressed: () => unawaited(window.close()),
+          onPressed: () => unawaited((onClose ?? window.close)()),
         ),
       ],
     ),

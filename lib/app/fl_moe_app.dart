@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -5,7 +7,9 @@ import '../core/backend/music_backend.dart';
 import '../features/auth/authentication_controller.dart';
 import '../features/music/favorite_tracks_controller.dart';
 import '../features/music/music_catalog_controller.dart';
+import '../features/music/user_playlists_controller.dart';
 import '../features/navigation/app_navigation_controller.dart';
+import '../features/player/lyrics_controller.dart';
 import '../features/player/playback_controller.dart';
 import '../features/settings/app_settings_controller.dart';
 import '../ui/desktop_shell.dart';
@@ -27,8 +31,14 @@ final class _FlMoeAppState extends State<FlMoeApp> {
     super.initState();
     _registerDependencies(widget.dependencies);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) widget.dependencies.startOnlineTasks();
+      if (mounted) widget.dependencies.startDeferredTasks();
     });
+  }
+
+  @override
+  void dispose() {
+    unawaited(widget.dependencies.tray.dispose());
+    super.dispose();
   }
 
   @override
@@ -42,6 +52,7 @@ final class _FlMoeAppState extends State<FlMoeApp> {
       home: DesktopShell(
         directories: widget.dependencies.directories,
         window: widget.dependencies.window,
+        tray: widget.dependencies.tray,
       ),
     ),
   );
@@ -57,11 +68,13 @@ void _registerDependencies(AppDependencies dependencies) {
   Get.put<AppNavigationController>(dependencies.navigation, permanent: true);
   Get.put<MusicCatalogController>(dependencies.catalog, permanent: true);
   Get.put<FavoriteTracksController>(dependencies.favorites, permanent: true);
+  Get.put<UserPlaylistsController>(dependencies.userPlaylists, permanent: true);
   Get.put<MusicCollectionDetailController>(
     dependencies.collectionDetail,
     permanent: true,
   );
   Get.put<MusicSearchController>(dependencies.search, permanent: true);
+  Get.put<LyricsController>(dependencies.lyrics, permanent: true);
   Get.put<PlaybackController>(dependencies.playback, permanent: true);
 }
 
