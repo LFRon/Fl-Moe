@@ -53,7 +53,7 @@ final class CollectionDetailPage extends StatelessWidget {
                       : () => unawaited(
                           Get.find<PlaybackController>().playTrack(
                             detail.tracks.first,
-                            queue: detail.tracks,
+                            sourceTracks: detail.tracks,
                           ),
                         ),
                   onRefresh: detail.loading

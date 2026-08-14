@@ -13,6 +13,7 @@ void main() {
     expect(controller.windowControlSide, WindowControlSide.right);
     expect(controller.accentColor, const Color(0xFF4C9BE8));
     expect(controller.clientVariant, KugouClientVariant.lite);
+    expect(controller.maximumPlaybackQuality, KugouPlaybackQuality.standard);
   });
 
   test('persists strongly typed setting wire values', () async {
@@ -22,7 +23,8 @@ void main() {
     controller
       ..setThemePreference(AppThemePreference.dark)
       ..setWindowControlSide(WindowControlSide.left)
-      ..setAccentColor(const Color(0xFFEC6F9B));
+      ..setAccentColor(const Color(0xFFEC6F9B))
+      ..setMaximumPlaybackQuality(KugouPlaybackQuality.hiRes);
     await controller.setClientVariant(KugouClientVariant.standard);
     await Future<void>.delayed(Duration.zero);
 
@@ -32,5 +34,7 @@ void main() {
     expect(restored.windowControlSide, WindowControlSide.left);
     expect(restored.accentColor, const Color(0xFFEC6F9B));
     expect(restored.clientVariant, KugouClientVariant.standard);
+    expect(restored.maximumPlaybackQuality, KugouPlaybackQuality.hiRes);
+    expect(store.read('close_to_tray'), isNull);
   });
 }

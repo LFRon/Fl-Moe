@@ -39,6 +39,8 @@ void main() {
       );
 
       expect(find.byType(SegmentedButton<KugouClientVariant>), findsNothing);
+      expect(find.text('关闭到系统托盘'), findsNothing);
+      expect(find.byType(Switch), findsNothing);
       expect(Get.isRegistered<MusicBackend>(), isFalse);
       final popup = tester.widget<PopupMenuButton<KugouClientVariant>>(
         find.byKey(const ValueKey<String>('kugou-client-variant-popup')),
@@ -48,6 +50,35 @@ void main() {
       expect(
         popup.popUpAnimationStyle?.duration,
         const Duration(milliseconds: 300),
+      );
+      final qualityButton = find.byKey(
+        const ValueKey<String>('maximum-playback-quality-button'),
+      );
+      final qualityArrow = find.descendant(
+        of: qualityButton,
+        matching: find.byIcon(Icons.keyboard_arrow_down_rounded),
+      );
+      expect(tester.getSize(qualityButton).width, greaterThanOrEqualTo(174));
+      expect(qualityArrow, findsOneWidget);
+      expect(
+        tester.getTopRight(qualityButton).dx -
+            tester.getTopRight(qualityArrow).dx,
+        closeTo(11, 0.01),
+        reason: 'the quality arrow should use the pill padding and border',
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('maximum-playback-quality-popup')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('playback-quality-master')),
+      );
+      await tester.pumpAndSettle();
+      expect(settings.maximumPlaybackQuality, KugouPlaybackQuality.master);
+      expect(
+        AppSettingsController.load(store).maximumPlaybackQuality,
+        KugouPlaybackQuality.master,
       );
 
       await _chooseStandardClient(tester);

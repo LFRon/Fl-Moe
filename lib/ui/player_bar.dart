@@ -3,8 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../features/navigation/app_navigation_controller.dart';
 import '../features/player/playback_controller.dart';
-import 'scrolling/fl_moe_smooth_scroll.dart';
+import '../features/player/playback_quality.dart';
 import 'widgets/common_widgets.dart';
 import 'widgets/network_artwork.dart';
 
@@ -62,41 +63,66 @@ final class PlayerBar extends StatelessWidget {
                     children: <Widget>[
                       SizedBox(
                         width: 300,
-                        child: Row(
-                          children: <Widget>[
-                            NetworkArtwork(
-                              url: track?.coverUrl ?? '',
-                              size: 58,
-                              borderRadius: 13,
-                            ),
-                            const SizedBox(width: 13),
-                            Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text(
-                                    track?.title ?? '还没有播放歌曲',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    track?.artist ?? '从搜索结果中选择一首歌吧',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(
-                                          color: scheme.onSurfaceVariant,
+                        child: InkWell(
+                          key: const ValueKey<String>(
+                            'open-now-playing-details',
+                          ),
+                          mouseCursor: track == null
+                              ? SystemMouseCursors.basic
+                              : SystemMouseCursors.click,
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: track == null
+                              ? null
+                              : Get.find<AppNavigationController>()
+                                    .showNowPlaying,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 3),
+                            child: Row(
+                              children: <Widget>[
+                                NetworkArtwork(
+                                  url: track?.coverUrl ?? '',
+                                  size: 58,
+                                  borderRadius: 13,
+                                ),
+                                const SizedBox(width: 13),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Text(
+                                        track?.title ?? '还没有播放歌曲',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
                                         ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        track?.artist ?? '从搜索结果中选择一首歌吧',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: scheme.onSurfaceVariant,
+                                            ),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                ),
+                                if (track != null)
+                                  Icon(
+                                    Icons.keyboard_double_arrow_up_rounded,
+                                    size: 18,
+                                    color: scheme.onSurfaceVariant,
+                                  ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                       Expanded(
@@ -122,7 +148,10 @@ final class PlayerBar extends StatelessWidget {
                                   onPressed: track == null || player.resolving
                                       ? null
                                       : () => unawaited(player.toggle()),
-                                  child: player.resolving || player.buffering
+                                  child:
+                                      player.resolving ||
+                                          player.buffering ||
+                                          player.seeking
                                       ? const SizedBox.square(
                                           dimension: 20,
                                           child: CircularProgressIndicator(
@@ -164,7 +193,7 @@ final class PlayerBar extends StatelessWidget {
                         ),
                       ),
                       SizedBox(
-                        width: 345,
+                        width: 420,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: <Widget>[
@@ -191,6 +220,37 @@ final class PlayerBar extends StatelessWidget {
                                 size: 20,
                               ),
                             ),
+                            if (track != null &&
+                                player.resolvedQuality != null) ...<Widget>[
+                              const SizedBox(width: 10),
+                              Tooltip(
+                                message:
+                                    '当前播放：${player.resolvedQuality!.settingsLabel}',
+                                child: Container(
+                                  key: const ValueKey<String>(
+                                    'current-playback-quality',
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 9,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: scheme.tertiaryContainer,
+                                    borderRadius: BorderRadius.circular(9),
+                                  ),
+                                  child: Text(
+                                    player.resolvedQuality!.badgeLabel,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: scheme.onTertiaryContainer,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                  ),
+                                ),
+                              ),
+                            ],
                             const SizedBox(width: 15),
                             Icon(
                               player.volume == 0
@@ -256,14 +316,6 @@ final class PlayerBar extends StatelessWidget {
                                   )
                                   .toList(growable: false),
                             ),
-                            IconButton(
-                              tooltip: '播放队列',
-                              onPressed: () => _showQueue(context, player),
-                              icon: const Icon(
-                                Icons.queue_music_rounded,
-                                size: 21,
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -276,71 +328,6 @@ final class PlayerBar extends StatelessWidget {
         ),
       );
     },
-  );
-}
-
-void _showQueue(BuildContext context, PlaybackController player) {
-  showModalBottomSheet<void>(
-    context: context,
-    constraints: const BoxConstraints(maxWidth: 560),
-    builder: (context) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Text(
-                  '播放队列',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const Spacer(),
-                Text('${player.queue.length} 首'),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Expanded(
-              child: player.queue.isEmpty
-                  ? const Center(child: Text('播放队列还是空的'))
-                  : SilkyListView.builder(
-                      silkyConfig: flMoeSmoothScrollConfig,
-                      itemCount: player.queue.length,
-                      itemBuilder: (context, index) {
-                        final track = player.queue[index];
-                        return ListTile(
-                          mouseCursor: WidgetStateMouseCursor.clickable,
-                          leading: NetworkArtwork(
-                            url: track.coverUrl,
-                            size: 42,
-                            borderRadius: 9,
-                          ),
-                          title: Text(
-                            track.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          subtitle: Text(
-                            track.artist,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          selected: player.currentTrack?.hash == track.hash,
-                          onTap: () {
-                            Navigator.pop(context);
-                            unawaited(
-                              player.playTrack(track, queue: player.queue),
-                            );
-                          },
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
-      ),
-    ),
   );
 }
 

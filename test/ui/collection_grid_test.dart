@@ -72,11 +72,15 @@ void main() {
       expect(navigation.selectedCollection, isNull);
       expect(detail.collection, isNull);
       expect(player.currentTrack?.hash, 'FIRST');
-      expect(player.queue.map((track) => track.hash), <String>[
-        'FIRST',
-        'SECOND',
+      expect(player.canGoNext, isTrue);
+
+      await player.next();
+      expect(player.currentTrack?.hash, 'SECOND');
+      expect(backend.routes, <String>[
+        '/playlist/track/all',
+        '/song/url',
+        '/song/url',
       ]);
-      expect(backend.routes, <String>['/playlist/track/all', '/song/url']);
     },
   );
 }

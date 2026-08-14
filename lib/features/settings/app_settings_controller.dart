@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import '../../core/storage/key_value_store.dart';
 import '../../kugou_api.dart';
+import '../player/playback_quality.dart';
 
 enum AppThemePreference { system, light, dark }
 
@@ -16,8 +17,8 @@ final class AppSettingsController extends GetxController {
     this._themePreference,
     this._windowControlSide,
     this._accentColorValue,
-    this._closeToTray,
     this._clientVariant,
+    this._maximumPlaybackQuality,
   );
 
   factory AppSettingsController.load(KeyValueStore store) {
@@ -34,11 +35,17 @@ final class AppSettingsController extends GetxController {
         WindowControlSide.right,
       ),
       _readInt(store.read(_accentKey)) ?? 0xFF4C9BE8,
-      store.read(_closeToTrayKey) == true,
       _enumByName(
         KugouClientVariant.values,
         store.read(_clientVariantKey),
         KugouClientVariant.lite,
+      ),
+      normalizeSelectablePlaybackQuality(
+        _enumByName(
+          KugouPlaybackQuality.values,
+          store.read(_maximumPlaybackQualityKey),
+          KugouPlaybackQuality.standard,
+        ),
       ),
     );
   }
@@ -46,21 +53,21 @@ final class AppSettingsController extends GetxController {
   static const String _themeKey = 'theme';
   static const String _windowControlsKey = 'window_controls';
   static const String _accentKey = 'accent_color';
-  static const String _closeToTrayKey = 'close_to_tray';
   static const String _clientVariantKey = 'kugou_client_variant';
+  static const String _maximumPlaybackQualityKey = 'maximum_playback_quality';
 
   final KeyValueStore _store;
   AppThemePreference _themePreference;
   WindowControlSide _windowControlSide;
   int _accentColorValue;
-  bool _closeToTray;
   KugouClientVariant _clientVariant;
+  KugouPlaybackQuality _maximumPlaybackQuality;
 
   AppThemePreference get themePreference => _themePreference;
   WindowControlSide get windowControlSide => _windowControlSide;
   Color get accentColor => Color(_accentColorValue);
-  bool get closeToTray => _closeToTray;
   KugouClientVariant get clientVariant => _clientVariant;
+  KugouPlaybackQuality get maximumPlaybackQuality => _maximumPlaybackQuality;
 
   ThemeMode get themeMode => switch (_themePreference) {
     AppThemePreference.system => ThemeMode.system,
@@ -89,11 +96,12 @@ final class AppSettingsController extends GetxController {
     unawaited(_store.write(_accentKey, _accentColorValue));
   }
 
-  void setCloseToTray(bool value) {
-    if (_closeToTray == value) return;
-    _closeToTray = value;
+  void setMaximumPlaybackQuality(KugouPlaybackQuality value) {
+    final normalized = normalizeSelectablePlaybackQuality(value);
+    if (_maximumPlaybackQuality == normalized) return;
+    _maximumPlaybackQuality = normalized;
     update();
-    unawaited(_store.write(_closeToTrayKey, value));
+    unawaited(_store.write(_maximumPlaybackQualityKey, normalized.name));
   }
 
   /// Saves the client variant that will be used on the next application start.

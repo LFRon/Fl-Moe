@@ -19,7 +19,7 @@ final class SongList extends StatelessWidget {
       tracks.length,
       (index) => SongListItem(
         track: tracks[index],
-        queue: tracks,
+        sourceTracks: tracks,
         index: index,
         compact: compact,
       ),
@@ -32,14 +32,14 @@ final class SongList extends StatelessWidget {
 final class SongListItem extends StatelessWidget {
   const SongListItem({
     required this.track,
-    required this.queue,
+    required this.sourceTracks,
     required this.index,
     required this.compact,
     super.key,
   });
 
   final MusicTrack track;
-  final List<MusicTrack> queue;
+  final List<MusicTrack> sourceTracks;
   final int index;
   final bool compact;
 
@@ -59,7 +59,8 @@ final class SongListItem extends StatelessWidget {
           child: InkWell(
             mouseCursor: WidgetStateMouseCursor.clickable,
             borderRadius: BorderRadius.circular(12),
-            onTap: () => unawaited(player.playTrack(track, queue: queue)),
+            onTap: () =>
+                unawaited(player.playTrack(track, sourceTracks: sourceTracks)),
             child: SizedBox(
               height: compact ? 58 : 66,
               child: Row(
@@ -130,8 +131,9 @@ final class SongListItem extends StatelessWidget {
                   ),
                   IconButton(
                     tooltip: '播放',
-                    onPressed: () =>
-                        unawaited(player.playTrack(track, queue: queue)),
+                    onPressed: () => unawaited(
+                      player.playTrack(track, sourceTracks: sourceTracks),
+                    ),
                     icon: const Icon(Icons.play_arrow_rounded),
                   ),
                   const SizedBox(width: 6),

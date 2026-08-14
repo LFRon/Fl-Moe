@@ -141,7 +141,7 @@ final class _FavoriteTracksViewState extends State<FavoriteTracksView> {
         if (trackIndex < tracks.length) {
           return SongListItem(
             track: tracks[trackIndex],
-            queue: tracks,
+            sourceTracks: tracks,
             index: trackIndex,
             compact: false,
           );
@@ -230,7 +230,7 @@ final class _FavoriteHeader extends StatelessWidget {
                 onPressed: () => unawaited(
                   Get.find<PlaybackController>().playTrack(
                     favorites.tracks.first,
-                    queue: favorites.tracks,
+                    sourceTracks: favorites.tracks,
                   ),
                 ),
                 icon: const Icon(Icons.play_arrow_rounded),

@@ -9,10 +9,12 @@ final class AppNavigationController extends GetxController {
   AppSection _collectionOrigin = AppSection.discover;
   String _pendingSearch = '';
   MusicCollection? _selectedCollection;
+  bool _nowPlayingVisible = false;
 
   AppSection get section => _section;
   String get pendingSearch => _pendingSearch;
   MusicCollection? get selectedCollection => _selectedCollection;
+  bool get nowPlayingVisible => _nowPlayingVisible;
 
   void goTo(AppSection value) {
     if (_section == value) return;
@@ -37,6 +39,18 @@ final class AppNavigationController extends GetxController {
     _section = _collectionOrigin == AppSection.collection
         ? AppSection.discover
         : _collectionOrigin;
+    update();
+  }
+
+  void showNowPlaying() {
+    if (_nowPlayingVisible) return;
+    _nowPlayingVisible = true;
+    update();
+  }
+
+  void hideNowPlaying() {
+    if (!_nowPlayingVisible) return;
+    _nowPlayingVisible = false;
     update();
   }
 }

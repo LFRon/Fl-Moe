@@ -31,7 +31,9 @@ final class CollectionGrid extends StatelessWidget {
         itemBuilder: (context, index) {
           final collection = collections[index];
           return _CollectionCard(
-            key: ValueKey<String>('${collection.kind.name}:${collection.id}'),
+            key: ValueKey<String>(
+              '${collection.kind.name}:${collection.id.isEmpty ? collection.accountListId : collection.id}',
+            ),
             collection: collection,
           );
         },
@@ -69,7 +71,7 @@ final class _CollectionCardState extends State<_CollectionCard> {
         return;
       }
       final player = Get.find<PlaybackController>();
-      await player.playTrack(tracks.first, queue: tracks);
+      await player.playTrack(tracks.first, sourceTracks: tracks);
       final error = player.error;
       if (error != null && mounted) _showMessage('播放失败：$error');
     } on Object catch (error) {

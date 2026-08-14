@@ -12,6 +12,7 @@ import 'widgets/about_card.dart';
 import 'widgets/client_variant_popup.dart';
 import 'widgets/color_choice.dart';
 import 'widgets/path_row.dart';
+import 'widgets/playback_quality_popup.dart';
 import 'widgets/setting_row.dart';
 import 'widgets/settings_section.dart';
 
@@ -36,7 +37,7 @@ final class SettingsPage extends StatelessWidget {
         content: Text(
           '确定将下次启动使用的音源从$currentLabel更改为$nextLabel吗？\n\n'
           '这次更改只会保存到 Fl-Moe 配置数据库，不会切换当前正在运行的'
-          '音源、登录会话或播放队列。需要重启应用后才会生效。',
+          '音源、登录会话或当前播放内容。需要重启应用后才会生效。',
         ),
         actions: <Widget>[
           TextButton(
@@ -153,6 +154,15 @@ final class SettingsPage extends StatelessWidget {
                     unawaited(_setClientVariant(context, settings, variant)),
               ),
             ),
+            const Divider(height: 1),
+            SettingRow(
+              title: '最高播放音质',
+              subtitle: '优先解析所选档位；歌曲或账户不支持时会自动逐级降低音质',
+              control: PlaybackQualityPopup(
+                selected: settings.maximumPlaybackQuality,
+                onSelected: settings.setMaximumPlaybackQuality,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 18),
@@ -179,12 +189,6 @@ final class SettingsPage extends StatelessWidget {
                 onSelectionChanged: (selection) =>
                     settings.setWindowControlSide(selection.single),
               ),
-            ),
-            const Divider(height: 1),
-            const SettingRow(
-              title: '关闭到系统托盘',
-              subtitle: '已预留窗口服务接口；nativeapi 稳定后再启用，避免当前 WIP API 影响 Wayland 主线',
-              control: Switch(value: false, onChanged: null),
             ),
           ],
         ),
