@@ -1,0 +1,16 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Fl-Moe
+GenericName=Music Player
+GenericName[zh_CN]=音乐播放器
+Comment=A native Flutter MoeKoe music client
+Comment[zh_CN]=使用 Flutter 实现的原生萌音客户端
+Terminal=false
+Categories=AudioVideo;Audio;Player;
+Keywords=Music;Audio;KuGou;MoeKoe;
+Keywords[zh_CN]=音乐;音频;酷狗;萌音;
+StartupNotify=true
+StartupWMClass=io.github.lfron.fl_moe
+
+# flutter_to_debian adds Icon, Exec and TryExec to the packaged copy.

@@ -1,0 +1,28 @@
+# Basic flutter_to_debian scaffold. Keep this version synchronized with the
+# Flutter package version in pubspec.yaml before producing a release package.
+flutter_app:
+  command: fl_moe
+  arch: x64
+  parent: /opt
+  nonInteractive: true
+  execFieldCodes: ''
+
+control:
+  Package: fl-moe
+  Version: 1.0.0
+  Architecture: amd64
+  Maintainer: Fl-Moe Contributors
+  Description: Native Flutter MoeKoe music client with an embedded pure-Dart KuGou API.
+  # Top-level runtime libraries for the current Linux release bundle. GTK and
+  # libmpv pull in their own codec, Wayland/X11 and rendering dependencies.
+  Depends:
+    - libc6 (>= 2.38)
+    - libgcc-s1
+    - libgtk-3-0
+    - libmpv2
+    - libstdc++6 (>= 13.1)
+    - zlib1g
+
+options:
+  # Keep generated packages under the ignored Flutter build tree.
+  exec_out_dir: build/linux/x64/release/debian
