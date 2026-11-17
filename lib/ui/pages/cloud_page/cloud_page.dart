@@ -10,6 +10,8 @@ final class CloudPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GetBuilder<AuthenticationController>(
+    filter: (authentication) =>
+        (isLoggedIn: authentication.isLoggedIn, userId: authentication.userId),
     builder: (authentication) => Padding(
       padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
       child: Column(

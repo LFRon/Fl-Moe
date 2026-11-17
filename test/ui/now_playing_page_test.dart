@@ -11,6 +11,7 @@ import 'package:fl_moe/features/player/playback_controller.dart';
 import 'package:fl_moe/kugou_api.dart';
 import 'package:fl_moe/ui/pages/now_playing_page/now_playing_page.dart';
 import 'package:fl_moe/ui/pages/now_playing_page/widgets/lyrics_panel.dart';
+import 'package:fl_moe/ui/pages/now_playing_page/widgets/now_playing_artwork.dart';
 import 'package:fl_moe/ui/player_bar.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_lyric/flutter_lyric.dart';
@@ -156,6 +157,9 @@ void main() {
       );
       final blurBeforePositionTick = tester.widget(blur);
       final lyricsBeforePositionTick = tester.widget(lyricList);
+      final artworkBeforePositionTick = tester.widget(
+        find.byType(NowPlayingArtwork),
+      );
       engine.emitPosition(const Duration(milliseconds: 500));
       await tester.pump();
       expect(
@@ -167,6 +171,12 @@ void main() {
         tester.widget(lyricList),
         same(lyricsBeforePositionTick),
         reason: 'sub-line ticks must not rebuild the complete lyrics list',
+      );
+      expect(
+        tester.widget(find.byType(NowPlayingArtwork)),
+        same(artworkBeforePositionTick),
+        reason:
+            'position ticks must not rebuild the artwork and transport column',
       );
 
       await tester.tap(find.byKey(const ValueKey<String>('close-now-playing')));

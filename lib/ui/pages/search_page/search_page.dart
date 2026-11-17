@@ -45,8 +45,18 @@ final class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) => GetBuilder<AppNavigationController>(
+    filter: (navigation) =>
+        (section: navigation.section, pendingSearch: navigation.pendingSearch),
     builder: (navigation) => GetBuilder<MusicSearchController>(
+      filter: (search) => (
+        query: search.query,
+        loading: search.loading,
+        error: search.error,
+        results: search.results,
+      ),
       builder: (search) => GetBuilder<MusicCatalogController>(
+        filter: (catalog) =>
+            (loading: catalog.homeLoading, words: catalog.hotWords),
         builder: (catalog) {
           _syncPendingSearch(navigation.pendingSearch);
           return Padding(
@@ -88,27 +98,42 @@ final class _SearchPageState extends State<SearchPage> {
                     child: search.loading
                         ? const SearchResultsSkeleton()
                         : search.results.isNotEmpty
-                        ? SilkyListView(
+                        ? SilkyListView.builder(
                             silkyConfig: flMoeSmoothScrollConfig,
                             key: ValueKey<String>('results-${search.query}'),
-                            children: <Widget>[
-                              Row(
-                                children: <Widget>[
-                                  Text(
-                                    '“${search.query}” 的歌曲',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.w700),
+                            itemCount: search.results.length + 2,
+                            itemBuilder: (context, index) {
+                              if (index == 0) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: Row(
+                                    children: <Widget>[
+                                      Text(
+                                        '“${search.query}” 的歌曲',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                      const Spacer(),
+                                      Text('${search.results.length} 首'),
+                                    ],
                                   ),
-                                  const Spacer(),
-                                  Text('${search.results.length} 首'),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              SongList(tracks: search.results),
-                              const SizedBox(height: 28),
-                            ],
+                                );
+                              }
+                              if (index > search.results.length) {
+                                return const SizedBox(height: 28);
+                              }
+                              final trackIndex = index - 1;
+                              return SongListItem(
+                                track: search.results[trackIndex],
+                                sourceTracks: search.results,
+                                index: trackIndex,
+                                compact: false,
+                              );
+                            },
                           )
                         : SearchSuggestionView(
                             key: const ValueKey<String>('suggestions'),

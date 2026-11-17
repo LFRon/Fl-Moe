@@ -139,15 +139,14 @@ final class _ReactiveNowPlayingArtwork extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GetBuilder<PlaybackController>(
+    // The progress row owns its own position/duration subscription, so a
+    // position tick only rebuilds two labels and one slider.
     filter: (value) => (
       track: value.currentTrack,
-      position: value.position,
-      duration: value.duration,
       playing: value.playing,
       buffering: value.buffering,
       resolving: value.resolving,
       seeking: value.seeking,
-      quality: value.resolvedQuality,
       canGoPrevious: value.canGoPrevious,
       canGoNext: value.canGoNext,
     ),

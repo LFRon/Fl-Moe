@@ -74,7 +74,14 @@ final class _FlMoeTitleBarState extends State<FlMoeTitleBar> {
 
   @override
   Widget build(BuildContext context) => GetBuilder<AppSettingsController>(
+    filter: (settings) => settings.windowControlSide,
     builder: (settings) => GetBuilder<AuthenticationController>(
+      filter: (authentication) => (
+        isLoggedIn: authentication.isLoggedIn,
+        userId: authentication.userId,
+        nickname: authentication.nickname,
+        avatarUrl: authentication.avatarUrl,
+      ),
       builder: (authentication) {
         final controlSide = settings.windowControlSide;
         final controls = FlMoeWindowControls(

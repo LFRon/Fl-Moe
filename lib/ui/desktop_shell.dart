@@ -34,63 +34,42 @@ final class DesktopShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) => WindowResizeFrame(
     window: window,
-    child: GetBuilder<AppNavigationController>(
-      builder: (navigation) => Scaffold(
-        body: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            Column(
-              key: const ValueKey<String>('desktop-shell-content'),
-              children: <Widget>[
-                FlMoeTitleBar(window: window, tray: tray),
-                Divider(height: 1, color: Theme.of(context).dividerColor),
-                Expanded(
-                  child: Row(
-                    children: <Widget>[
-                      const AppSidebar(),
-                      Expanded(
-                        child: ClipRect(
-                          child: FlMoePageTransition(
+    child: Scaffold(
+      body: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          Column(
+            key: const ValueKey<String>('desktop-shell-content'),
+            children: <Widget>[
+              FlMoeTitleBar(window: window, tray: tray),
+              Divider(height: 1, color: Theme.of(context).dividerColor),
+              Expanded(
+                child: Row(
+                  children: <Widget>[
+                    const AppSidebar(),
+                    Expanded(
+                      child: ClipRect(
+                        child: GetBuilder<AppNavigationController>(
+                          // Section changes rebuild the page area only.
+                          // Showing/hiding the now-playing overlay is handled
+                          // by a separate builder below, so the active page is
+                          // not rebuilt while that transition runs.
+                          filter: (navigation) => navigation.section,
+                          builder: (navigation) => FlMoePageTransition(
                             section: navigation.section,
                             child: _pageFor(navigation.section),
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const PlayerBar(),
-              ],
-            ),
-            Positioned.fill(
-              child: AnimatedSwitcher(
-                key: const ValueKey<String>('now-playing-full-window-overlay'),
-                duration: const Duration(milliseconds: 320),
-                reverseDuration: const Duration(milliseconds: 240),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                transitionBuilder: (child, animation) => FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 0.035),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: child,
-                  ),
-                ),
-                child: navigation.nowPlayingVisible
-                    ? NowPlayingPage(
-                        key: const ValueKey<String>('now-playing-visible'),
-                        window: window,
-                      )
-                    : const SizedBox.shrink(
-                        key: ValueKey<String>('now-playing-hidden'),
-                      ),
               ),
-            ),
-          ],
-        ),
+              const PlayerBar(),
+            ],
+          ),
+          Positioned.fill(child: _NowPlayingOverlay(window: window)),
+        ],
       ),
     ),
   );
@@ -104,4 +83,43 @@ final class DesktopShell extends StatelessWidget {
     AppSection.cloud => const CloudPage(),
     AppSection.settings => SettingsPage(directories: directories),
   };
+}
+
+/// Owns the full-window now-playing transition without rebuilding the active
+/// section page when the overlay opens or closes.
+final class _NowPlayingOverlay extends StatelessWidget {
+  const _NowPlayingOverlay({required this.window});
+
+  final DesktopWindowService window;
+
+  @override
+  Widget build(BuildContext context) => GetBuilder<AppNavigationController>(
+    filter: (navigation) => navigation.nowPlayingVisible,
+    builder: (navigation) => AnimatedSwitcher(
+      key: const ValueKey<String>('now-playing-full-window-overlay'),
+      duration: const Duration(milliseconds: 320),
+      reverseDuration: const Duration(milliseconds: 240),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.035),
+            end: Offset.zero,
+          ).animate(animation),
+          child: child,
+        ),
+      ),
+      child: navigation.nowPlayingVisible
+          // Cache the complete overlay while it slides and fades. Without this
+          // boundary every intermediate transform re-rasterizes the blurred
+          // background and the lyric canvas.
+          ? RepaintBoundary(
+              key: const ValueKey<String>('now-playing-visible'),
+              child: NowPlayingPage(window: window),
+            )
+          : const SizedBox.shrink(key: ValueKey<String>('now-playing-hidden')),
+    ),
+  );
 }

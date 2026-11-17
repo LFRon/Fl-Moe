@@ -25,7 +25,6 @@ final class PlayerBar extends StatelessWidget {
       seeking: player.seeking,
       error: player.error,
       quality: player.resolvedQuality,
-      volume: player.volume,
       canGoPrevious: player.canGoPrevious,
       canGoNext: player.canGoNext,
       playbackMode: player.playbackMode,
@@ -237,34 +236,7 @@ final class PlayerBar extends StatelessWidget {
                               ),
                             ],
                             const SizedBox(width: 15),
-                            Icon(
-                              player.volume == 0
-                                  ? Icons.volume_off_rounded
-                                  : Icons.volume_up_rounded,
-                              size: 20,
-                            ),
-                            SizedBox(
-                              width: 105,
-                              child: SliderTheme(
-                                data: SliderTheme.of(context).copyWith(
-                                  // Keep the full slider hit area while
-                                  // bringing the visible track closer to the
-                                  // volume icon.
-                                  overlayShape: const RoundSliderOverlayShape(
-                                    overlayRadius: 12,
-                                  ),
-                                ),
-                                child: Slider(
-                                  key: const ValueKey<String>(
-                                    'player-volume-slider',
-                                  ),
-                                  value: player.volume,
-                                  max: 100,
-                                  onChanged: (value) =>
-                                      unawaited(player.setVolume(value)),
-                                ),
-                              ),
-                            ),
+                            const _PlayerVolumeControl(),
                             PopupMenuButton<PlaybackMode>(
                               tooltip:
                                   '播放模式：${_playbackModeLabel(player.playbackMode)}',
@@ -313,6 +285,44 @@ final class PlayerBar extends StatelessWidget {
         ),
       );
     },
+  );
+}
+
+final class _PlayerVolumeControl extends StatelessWidget {
+  const _PlayerVolumeControl();
+
+  @override
+  Widget build(BuildContext context) => GetBuilder<PlaybackController>(
+    // Dragging the volume slider must not rebuild the transport controls or
+    // the now-playing summary on every pointer move.
+    filter: (player) => player.volume,
+    builder: (player) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Icon(
+          player.volume == 0
+              ? Icons.volume_off_rounded
+              : Icons.volume_up_rounded,
+          size: 20,
+        ),
+        SizedBox(
+          width: 105,
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              // Keep the full slider hit area while bringing the visible
+              // track closer to the volume icon.
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+            ),
+            child: Slider(
+              key: const ValueKey<String>('player-volume-slider'),
+              value: player.volume,
+              max: 100,
+              onChanged: (value) => unawaited(player.setVolume(value)),
+            ),
+          ),
+        ),
+      ],
+    ),
   );
 }
 

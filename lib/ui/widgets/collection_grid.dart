@@ -42,6 +42,37 @@ final class CollectionGrid extends StatelessWidget {
   );
 }
 
+final class SliverCollectionGrid extends StatelessWidget {
+  const SliverCollectionGrid({required this.collections, super.key});
+
+  final List<MusicCollection> collections;
+
+  @override
+  Widget build(BuildContext context) => SliverLayoutBuilder(
+    builder: (context, constraints) {
+      final count = (constraints.crossAxisExtent / 190).floor().clamp(2, 6);
+      return SliverGrid.builder(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: count,
+          mainAxisSpacing: 18,
+          crossAxisSpacing: 18,
+          childAspectRatio: 0.84,
+        ),
+        itemCount: collections.length,
+        itemBuilder: (context, index) {
+          final collection = collections[index];
+          return _CollectionCard(
+            key: ValueKey<String>(
+              '${collection.kind.name}:${collection.id.isEmpty ? collection.accountListId : collection.id}',
+            ),
+            collection: collection,
+          );
+        },
+      );
+    },
+  );
+}
+
 final class _CollectionCard extends StatefulWidget {
   const _CollectionCard({required this.collection, super.key});
 

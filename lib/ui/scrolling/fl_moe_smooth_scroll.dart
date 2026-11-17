@@ -1,6 +1,7 @@
 import 'package:silky_scroll/silky_scroll.dart';
 
-export 'package:silky_scroll/silky_scroll.dart' show SilkyListView;
+export 'package:silky_scroll/silky_scroll.dart'
+    show SilkyCustomScrollView, SilkyListView;
 
 /// Shared desktop scroll tuning for every independently scrollable Fl-Moe
 /// region.

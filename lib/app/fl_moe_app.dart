@@ -43,6 +43,10 @@ final class _FlMoeAppState extends State<FlMoeApp> {
 
   @override
   Widget build(BuildContext context) => GetBuilder<AppSettingsController>(
+    // Only appearance changes need to rebuild the MaterialApp. Window chrome
+    // and playback-source preferences are consumed by their own subtrees.
+    filter: (settings) =>
+        (themeMode: settings.themeMode, accentColor: settings.accentColor),
     builder: (settings) => MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Fl-Moe',

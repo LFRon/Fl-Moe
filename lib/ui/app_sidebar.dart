@@ -18,6 +18,8 @@ final class AppSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GetBuilder<AppNavigationController>(
+    // Opening the now-playing overlay must not rebuild the navigation rail.
+    filter: (navigation) => navigation.section,
     builder: (navigation) {
       final selected = navigation.section;
       final scheme = Theme.of(context).colorScheme;

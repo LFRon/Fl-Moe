@@ -19,7 +19,14 @@ final class CollectionDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       GetBuilder<MusicCollectionDetailController>(
+        filter: (detail) => (
+          collection: detail.collection,
+          tracks: detail.tracks,
+          loading: detail.loading,
+          error: detail.error,
+        ),
         builder: (detail) => GetBuilder<AppNavigationController>(
+          filter: (navigation) => (collection: navigation.selectedCollection),
           builder: (navigation) {
             final collection =
                 detail.collection ?? navigation.selectedCollection;

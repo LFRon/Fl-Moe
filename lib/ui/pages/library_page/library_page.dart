@@ -90,8 +90,26 @@ final class _LibraryPageState extends State<LibraryPage> {
 
   @override
   Widget build(BuildContext context) => GetBuilder<AuthenticationController>(
+    filter: (authentication) => authentication.isLoggedIn,
     builder: (authentication) => GetBuilder<UserPlaylistsController>(
+      filter: (playlists) => (
+        loaded: playlists.loaded,
+        loading: playlists.loading,
+        error: playlists.error,
+        all: playlists.allPlaylists,
+        created: playlists.createdPlaylists,
+        collected: playlists.collectedPlaylists,
+      ),
       builder: (playlists) => GetBuilder<FavoriteTracksController>(
+        filter: (favorites) => (
+          loaded: favorites.loaded,
+          loading: favorites.loading,
+          loadingMore: favorites.loadingMore,
+          hasMore: favorites.hasMore,
+          error: favorites.error,
+          tracks: favorites.tracks,
+          total: favorites.totalCount,
+        ),
         builder: (favorites) {
           _schedulePlaylistLoad(authentication, playlists);
           return switch (_view) {
@@ -102,6 +120,10 @@ final class _LibraryPageState extends State<LibraryPage> {
               onLogin: () => _loginForFavorites(favorites, playlists),
             ),
             _LibraryView.overview => GetBuilder<PlaybackController>(
+              // The overview only renders recent history. Playback position,
+              // buffering and volume ticks must not rebuild every card above
+              // the list.
+              filter: (player) => player.recentTracks,
               builder: (player) => _LibraryOverview(
                 player: player,
                 playlists: playlists,
@@ -147,85 +169,120 @@ final class _LibraryOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final recentTracks = player.recentTracks;
-    return SilkyListView(
+    final hasRecent = recentTracks.isNotEmpty;
+    return SilkyCustomScrollView(
       silkyConfig: flMoeSmoothScrollConfig,
-      padding: const EdgeInsets.fromLTRB(28, 24, 28, 32),
-      children: <Widget>[
-        const PageHeading(
-          title: '我的音乐',
-          subtitle: '播放历史存放在 Fl-Moe 自己的 Hive CE 数据库中',
+      slivers: <Widget>[
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(28, 24, 28, 0),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate(<Widget>[
+              const PageHeading(
+                title: '我的音乐',
+                subtitle: '播放历史存放在 Fl-Moe 自己的 Hive CE 数据库中',
+              ),
+              const SizedBox(height: 24),
+              LibraryCard(
+                key: const ValueKey<String>('favorite-library-card'),
+                title: '我的收藏',
+                subtitle: favoriteSubtitle,
+                asset: 'assets/images/favorites.png',
+                onPressed: onOpenFavorites,
+              ),
+              const SizedBox(height: 28),
+            ]),
+          ),
         ),
-        const SizedBox(height: 24),
-        LibraryCard(
-          key: const ValueKey<String>('favorite-library-card'),
-          title: '我的收藏',
-          subtitle: favoriteSubtitle,
-          asset: 'assets/images/favorites.png',
-          onPressed: onOpenFavorites,
-        ),
-        const SizedBox(height: 28),
-        UserPlaylistsSection(
+        UserPlaylistsSliver(
+          key: const ValueKey<String>('user-playlists-section'),
           controller: playlists,
           loggedIn: loggedIn,
           onLogin: onLoginForPlaylists,
           onOpenPlaylist: onOpenPlaylist,
         ),
-        const SizedBox(height: 28),
-        LayoutBuilder(
-          builder: (context, constraints) => Row(
-            children: <Widget>[
-              Expanded(
-                child: LibraryCard(
-                  title: '本地音乐',
-                  subtitle: '扫描与管理电脑上的音乐文件',
-                  asset: 'assets/images/local_music.png',
-                  onPressed: () => showReservedFeature(context, '本地音乐扫描'),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate(<Widget>[
+              LayoutBuilder(
+                builder: (context, constraints) => Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: LibraryCard(
+                        title: '本地音乐',
+                        subtitle: '扫描与管理电脑上的音乐文件',
+                        asset: 'assets/images/local_music.png',
+                        onPressed: () => showReservedFeature(context, '本地音乐扫描'),
+                      ),
+                    ),
+                    const SizedBox(width: 18),
+                    Expanded(
+                      child: LibraryCard(
+                        title: '我的云盘',
+                        subtitle: '酷狗云盘接口已经内嵌，可在云盘页登录使用',
+                        asset: 'assets/images/cloud_disk.png',
+                        onPressed: () => showReservedFeature(context, '云盘批量管理'),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 18),
-              Expanded(
-                child: LibraryCard(
-                  title: '我的云盘',
-                  subtitle: '酷狗云盘接口已经内嵌，可在云盘页登录使用',
-                  asset: 'assets/images/cloud_disk.png',
-                  onPressed: () => showReservedFeature(context, '云盘批量管理'),
-                ),
+              const SizedBox(height: 32),
+              Row(
+                children: <Widget>[
+                  Text(
+                    '最近播放',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  TextButton.icon(
+                    key: const ValueKey<String>('clear-recent-tracks'),
+                    onPressed: recentTracks.isEmpty
+                        ? null
+                        : () => unawaited(
+                            _confirmAndClearRecentTracks(context, player),
+                          ),
+                    icon: const Icon(Icons.delete_sweep_outlined, size: 19),
+                    label: const Text('清空列表'),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '${recentTracks.length} 首',
+                    key: const ValueKey<String>('recent-tracks-count'),
+                  ),
+                ],
               ),
-            ],
+              const SizedBox(height: 12),
+            ]),
           ),
         ),
-        const SizedBox(height: 32),
-        Row(
-          children: <Widget>[
-            Text(
-              '最近播放',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        if (hasRecent)
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                return SongListItem(
+                  track: recentTracks[index],
+                  sourceTracks: recentTracks,
+                  index: index,
+                  compact: false,
+                );
+              }, childCount: recentTracks.length),
             ),
-            const Spacer(),
-            TextButton.icon(
-              key: const ValueKey<String>('clear-recent-tracks'),
-              onPressed: recentTracks.isEmpty
-                  ? null
-                  : () => unawaited(
-                      _confirmAndClearRecentTracks(context, player),
-                    ),
-              icon: const Icon(Icons.delete_sweep_outlined, size: 19),
-              label: const Text('清空列表'),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              '${recentTracks.length} 首',
-              key: const ValueKey<String>('recent-tracks-count'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        if (recentTracks.isEmpty)
-          const EmptyState(title: '还没有播放记录', message: '从搜索页播放一首歌后，这里会自动保存最近记录。')
+          )
         else
-          SongList(tracks: recentTracks),
+          const SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: 28),
+            sliver: SliverToBoxAdapter(
+              child: EmptyState(
+                title: '还没有播放记录',
+                message: '从搜索页播放一首歌后，这里会自动保存最近记录。',
+              ),
+            ),
+          ),
+        const SliverToBoxAdapter(child: SizedBox(height: 32)),
       ],
     );
   }

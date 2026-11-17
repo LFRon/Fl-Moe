@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../../features/music/music_models.dart';
@@ -30,11 +31,6 @@ final class NowPlayingArtwork extends StatelessWidget {
       final coverSize = math
           .min(math.min(availableWidth, availableHeight), 380)
           .toDouble();
-      final durationMs = player.duration.inMilliseconds;
-      final positionMs = player.position.inMilliseconds.clamp(
-        0,
-        durationMs > 0 ? durationMs : 1,
-      );
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
@@ -80,47 +76,7 @@ final class NowPlayingArtwork extends StatelessWidget {
             ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 13),
-          Row(
-            children: <Widget>[
-              Text(
-                _format(player.position),
-                style: Theme.of(context).textTheme.labelSmall,
-              ),
-              Expanded(
-                child: Slider(
-                  value: positionMs.toDouble(),
-                  max: durationMs > 0 ? durationMs.toDouble() : 1,
-                  onChanged: (value) => unawaited(
-                    player.seek(Duration(milliseconds: value.round())),
-                  ),
-                ),
-              ),
-              Text(
-                _format(player.duration),
-                style: Theme.of(context).textTheme.labelSmall,
-              ),
-              if (player.resolvedQuality != null) ...<Widget>[
-                const SizedBox(width: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: scheme.tertiaryContainer,
-                    borderRadius: BorderRadius.circular(9),
-                  ),
-                  child: Text(
-                    player.resolvedQuality!.badgeLabel,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: scheme.onTertiaryContainer,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
+          const _NowPlayingProgress(),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -164,6 +120,64 @@ final class NowPlayingArtwork extends StatelessWidget {
               ),
             ],
           ),
+        ],
+      );
+    },
+  );
+}
+
+final class _NowPlayingProgress extends StatelessWidget {
+  const _NowPlayingProgress();
+
+  @override
+  Widget build(BuildContext context) => GetBuilder<PlaybackController>(
+    filter: (player) => (
+      position: player.position,
+      duration: player.duration,
+      quality: player.resolvedQuality,
+    ),
+    builder: (player) {
+      final scheme = Theme.of(context).colorScheme;
+      final durationMs = player.duration.inMilliseconds;
+      final positionMs = player.position.inMilliseconds.clamp(
+        0,
+        durationMs > 0 ? durationMs : 1,
+      );
+      return Row(
+        children: <Widget>[
+          Text(
+            _format(player.position),
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
+          Expanded(
+            child: Slider(
+              value: positionMs.toDouble(),
+              max: durationMs > 0 ? durationMs.toDouble() : 1,
+              onChanged: (value) =>
+                  unawaited(player.seek(Duration(milliseconds: value.round()))),
+            ),
+          ),
+          Text(
+            _format(player.duration),
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
+          if (player.resolvedQuality != null) ...<Widget>[
+            const SizedBox(width: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+              decoration: BoxDecoration(
+                color: scheme.tertiaryContainer,
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Text(
+                player.resolvedQuality!.badgeLabel,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: scheme.onTertiaryContainer,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
         ],
       );
     },

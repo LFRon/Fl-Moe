@@ -82,9 +82,18 @@ final class _CoverImage extends StatelessWidget {
       fit: BoxFit.cover,
     );
     if (coverUrl.isEmpty) return fallback;
+    // The image is heavily blurred, so half-resolution decoding is visually
+    // indistinguishable while cutting decode and texture-upload work when the
+    // track changes.
+    final cacheWidth =
+        (MediaQuery.sizeOf(context).width *
+                MediaQuery.devicePixelRatioOf(context) *
+                0.5)
+            .round();
     return CachedNetworkImage(
       imageUrl: coverUrl,
       fit: BoxFit.cover,
+      memCacheWidth: cacheWidth,
       fadeInDuration: Duration.zero,
       fadeOutDuration: Duration.zero,
       placeholderFadeInDuration: Duration.zero,

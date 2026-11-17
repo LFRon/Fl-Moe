@@ -67,6 +67,8 @@ final response = await api.callJson(
 
 `/login/qr/create` 返回 `data.url` 与 `data.content`，两者都是应编码进二维码的 H5 URL，不在 API 内生成 PNG 或 Base64 图片。Flutter 使用 `pretty_qr_code` 渲染该字符串；普通封面等真实图片 URL 交给 `cached_network_image_ce`。
 
+渲染路径按“只重建真正变化的部分”设计：歌单详情、最近播放、搜索结果、收藏歌曲、账号歌单以及首页/发现页封面网格都使用 builder 或 sliver 惰性布局；播放位置、音量、缓冲状态和当前歌曲各自拥有独立刷新边界；长列表图片关闭淡入图层，骨架动画、歌词画布和播放详情背景使用独立 `RepaintBoundary`。
+
 Hive CE 数据与 MoeKoe Music 完全隔离：
 
 - Linux 配置与酷狗会话：`${XDG_CONFIG_HOME:-$HOME/.config}/Fl-Moe`
