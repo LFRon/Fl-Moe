@@ -235,8 +235,11 @@ class Translator:
         flags = {
             "encryptKey": "encryptKey",
             "clearDefaultParams": "clearDefaultParameters",
+            "clearDefaultHeaders": "clearDefaultHeaders",
             "notSignature": "skipSignature",
-            "notSign": "skipSignature",
+            # NOTE: Upstream request.js only reads `notSignature`. `notSign`
+            # is ignored by the reference implementation, so it must not
+            # suppress the signature in generated Dart either.
         }
         for source_name, dart_name in flags.items():
             if source_name in options:
@@ -285,12 +288,20 @@ class Translator:
             constants = {
                 "appid": "context.config.appId",
                 "clientver": "context.config.clientVersion",
+                "liteAppid": "3116",
+                "liteClientver": "11440",
                 "apiver": "KugouApiConfig.apiVersion",
                 "srcappid": "KugouApiConfig.sourceAppId",
                 "isLite": "context.config.isLite",
                 "undefined": "null",
             }
             return constants.get(value, "input" if value == "params" else value)
+        if kind == "member_expression":
+            text = self.text(node)
+            if text == "process.env.platform":
+                return '(context.config.isLite ? "lite" : "")'
+            if text == "process.env.CMT_VER":
+                return "6"
         if kind in {"shorthand_property_identifier", "shorthand_property_identifier_pattern"}:
             value = self.text(node)
             constants = {
@@ -557,7 +568,8 @@ def generate(source_dir: Path, output: Path) -> tuple[int, list[tuple[str, str]]
     manual = {"lyric", "playlist_track_all", "search", "song_url"}
     for source_file in sorted(source_dir.glob("*.js")):
         name = source_file.stem
-        if name in manual:
+        # Files prefixed with "_" are internal helpers and are not HTTP routes.
+        if name.startswith("_") or name in manual:
             continue
         try:
             route, handler, body = Translator(source_file.read_bytes(), name).translate()

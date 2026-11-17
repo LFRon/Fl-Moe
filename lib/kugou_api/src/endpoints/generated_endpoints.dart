@@ -12,12 +12,14 @@ import '../utilities.dart';
 Map<String, KugouEndpointHandler> createGeneratedEndpointHandlers() =>
     <String, KugouEndpointHandler>{
       "/ai/recommend": _generatedAiRecommend,
+      "/ai/recommend/song": _generatedAiRecommendSong,
       "/album": _generatedAlbum,
       "/album/detail": _generatedAlbumDetail,
       "/album/shop": _generatedAlbumShop,
       "/album/songs": _generatedAlbumSongs,
       "/artist/albums": _generatedArtistAlbums,
       "/artist/audios": _generatedArtistAudios,
+      "/artist/audios/new": _generatedArtistAudiosNew,
       "/artist/detail": _generatedArtistDetail,
       "/artist/follow": _generatedArtistFollow,
       "/artist/follow/newsongs": _generatedArtistFollowNewsongs,
@@ -34,6 +36,12 @@ Map<String, KugouEndpointHandler> createGeneratedEndpointHandlers() =>
       "/comment/music/classify": _generatedCommentMusicClassify,
       "/comment/music/hotword": _generatedCommentMusicHotword,
       "/comment/playlist": _generatedCommentPlaylist,
+      "/effects/artist": _generatedEffectsArtist,
+      "/effects/brand": _generatedEffectsBrand,
+      "/effects/brand/detail": _generatedEffectsBrandDetail,
+      "/effects/car/brand": _generatedEffectsCarBrand,
+      "/effects/car/brand/lists": _generatedEffectsCarBrandLists,
+      "/effects/match": _generatedEffectsMatch,
       "/everyday/friend": _generatedEverydayFriend,
       "/everyday/history": _generatedEverydayHistory,
       "/everyday/recommend": _generatedEverydayRecommend,
@@ -45,6 +53,7 @@ Map<String, KugouEndpointHandler> createGeneratedEndpointHandlers() =>
       "/get/mode/info": _generatedGetModeInfo,
       "/get/model": _generatedGetModel,
       "/get/verify/info": _generatedGetVerifyInfo,
+      "/home/discover": _generatedHomeDiscover,
       "/ip": _generatedIp,
       "/ip/dateil": _generatedIpDateil,
       "/ip/playlist": _generatedIpPlaylist,
@@ -56,8 +65,11 @@ Map<String, KugouEndpointHandler> createGeneratedEndpointHandlers() =>
       "/login/qr/key": _generatedLoginQrKey,
       "/longaudio/album/audios": _generatedLongaudioAlbumAudios,
       "/longaudio/album/detail": _generatedLongaudioAlbumDetail,
+      "/longaudio/album/list": _generatedLongaudioAlbumList,
       "/longaudio/daily/recommend": _generatedLongaudioDailyRecommend,
       "/longaudio/rank/recommend": _generatedLongaudioRankRecommend,
+      "/longaudio/search": _generatedLongaudioSearch,
+      "/longaudio/tag/list": _generatedLongaudioTagList,
       "/longaudio/vip/recommend": _generatedLongaudioVipRecommend,
       "/longaudio/week/recommend": _generatedLongaudioWeekRecommend,
       "/pc/diantai": _generatedPcDiantai,
@@ -98,9 +110,11 @@ Map<String, KugouEndpointHandler> createGeneratedEndpointHandlers() =>
       "/sheet/song": _generatedSheetSong,
       "/sheet/tags": _generatedSheetTags,
       "/singer/list": _generatedSingerList,
+      "/song/auth": _generatedSongAuth,
       "/song/climax": _generatedSongClimax,
       "/song/ranking": _generatedSongRanking,
       "/song/ranking/filter": _generatedSongRankingFilter,
+      "/song/url/auth": _generatedSongUrlAuth,
       "/song/url/new": _generatedSongUrlNew,
       "/theme/music": _generatedThemeMusic,
       "/theme/music/detail": _generatedThemeMusicDetail,
@@ -111,12 +125,13 @@ Map<String, KugouEndpointHandler> createGeneratedEndpointHandlers() =>
       "/top/card/youth": _generatedTopCardYouth,
       "/top/playlist": _generatedTopPlaylist,
       "/top/song": _generatedTopSong,
-      "/top/tag/card/youth": _generatedTopTagCardYouth,
       "/user/cloud/url": _generatedUserCloudUrl,
       "/user/detail": _generatedUserDetail,
+      "/user/fans": _generatedUserFans,
       "/user/follow": _generatedUserFollow,
-      "/user/follow/message": _generatedUserFollowMessage,
+      "/user/friends": _generatedUserFriends,
       "/user/history": _generatedUserHistory,
+      "/user/info": _generatedUserInfo,
       "/user/listen": _generatedUserListen,
       "/user/playlist": _generatedUserPlaylist,
       "/user/purchased/albums": _generatedUserPurchasedAlbums,
@@ -134,6 +149,7 @@ Map<String, KugouEndpointHandler> createGeneratedEndpointHandlers() =>
       "/youth/channel/similar": _generatedYouthChannelSimilar,
       "/youth/channel/song": _generatedYouthChannelSong,
       "/youth/channel/song/detail": _generatedYouthChannelSongDetail,
+      "/youth/channel/song/list": _generatedYouthChannelSongList,
       "/youth/channel/sub": _generatedYouthChannelSub,
       "/youth/day/vip": _generatedYouthDayVip,
       "/youth/day/vip/upgrade": _generatedYouthDayVipUpgrade,
@@ -189,6 +205,28 @@ Future<KugouResponse<Object?>> _generatedAiRecommend(
         jsOr(context.session.cookies, <String, Object?>{}),
       ),
       clearDefaultParameters: jsTruthy(true),
+    ),
+  );
+}
+
+Future<KugouResponse<Object?>> _generatedAiRecommendSong(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  final dataMap = <String, Object?>{
+    "apiver": 2,
+    "source": 2,
+    "pagesize": jsOr(input["pagesize"], 30),
+    "page": jsOr(input["page"], 1),
+  };
+  return context.request(
+    KugouRequest(
+      path: jsString("/concepts/v1/ai/recommend_song"),
+      method: jsString("post"),
+      data: dataMap,
+      cookies: stringStringMap(
+        jsOr(context.session.cookies, <String, Object?>{}),
+      ),
     ),
   );
 }
@@ -379,6 +417,35 @@ Future<KugouResponse<Object?>> _generatedArtistAudios(
         "x-router": "openapi.kugou.com",
         "kg-tid": 220,
       }),
+      cookies: stringStringMap(
+        jsOr(context.session.cookies, <String, Object?>{}),
+      ),
+    ),
+  );
+}
+
+Future<KugouResponse<Object?>> _generatedArtistAudiosNew(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  return context.request(
+    KugouRequest(
+      path: jsString("/openapi/kmr/v2/audio_group/author"),
+      baseUri: Uri.parse(jsString("https://gateway.kugou.com")),
+      method: jsString("GET"),
+      parameters: stringObjectMap(<String, Object?>{
+        "author_id": input["id"],
+        "area_code": "all",
+        "sort": (jsTruthy((input["sort"] == "hot")) ? 1 : 2),
+        "page": jsOr(input["page"], 1),
+        "pagesize": jsOr(input["pagesize"], 30),
+        "replace_api_version": 1,
+        "mvdata_need": 1,
+        "show_audio_honor": 1,
+        "show_audio_tag": 1,
+        "replace_need": 1,
+      }),
+      headers: stringObjectMap(<String, Object?>{"kg-tid": 36}),
       cookies: stringStringMap(
         jsOr(context.session.cookies, <String, Object?>{}),
       ),
@@ -792,6 +859,7 @@ Future<KugouResponse<Object?>> _generatedCommentMusic(
   Map<String, Object?> input,
 ) async {
   final paramsMap = <String, Object?>{
+    "ver": jsNumber(jsOr(6, 6)),
     "mixsongid": input["mixsongid"],
     "need_show_image": 1,
     "p": jsOr(input["page"], 1),
@@ -889,6 +957,143 @@ Future<KugouResponse<Object?>> _generatedCommentPlaylist(
       cookies: stringStringMap(
         jsOr(context.session.cookies, <String, Object?>{}),
       ),
+    ),
+  );
+}
+
+Future<KugouResponse<Object?>> _generatedEffectsArtist(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  final paramsMap = <String, Object?>{
+    "plat": 2,
+    "version": 12460,
+    "apiver": 2,
+    "sort": 1,
+    "pagesize": jsOr(input["pagesize"], 30),
+    "page": jsOr(input["page"], 1),
+    "classify": 1,
+  };
+  return context.request(
+    KugouRequest(
+      path: jsString("/api/v3/sound/list"),
+      baseUri: Uri.parse(jsString("http://mobilecdngz.kugou.com")),
+      method: jsString("GET"),
+      parameters: stringObjectMap(paramsMap),
+      cookies: stringStringMap(
+        jsOr(context.session.cookies, <String, Object?>{}),
+      ),
+      clearDefaultParameters: jsTruthy(true),
+    ),
+  );
+}
+
+Future<KugouResponse<Object?>> _generatedEffectsBrand(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  final paramsMap = <String, Object?>{
+    "sort": 1,
+    "pagesize": jsOr(input["pagesize"], 30),
+    "page": jsOr(input["page"], 1),
+  };
+  return context.request(
+    KugouRequest(
+      path: jsString("/api/v5/earphone/get_brand"),
+      baseUri: Uri.parse(jsString("http://mobilecdngz.kugou.com")),
+      method: jsString("GET"),
+      parameters: stringObjectMap(paramsMap),
+      cookies: stringStringMap(
+        jsOr(context.session.cookies, <String, Object?>{}),
+      ),
+      clearDefaultParameters: jsTruthy(true),
+    ),
+  );
+}
+
+Future<KugouResponse<Object?>> _generatedEffectsBrandDetail(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  final paramsMap = <String, Object?>{
+    "brand_id": jsOr(input["brand_id"], 0),
+    "pagesize": jsOr(input["pagesize"], 30),
+    "page": jsOr(input["page"], 1),
+  };
+  return context.request(
+    KugouRequest(
+      path: jsString("/api/v5/earphone/get_model"),
+      baseUri: Uri.parse(jsString("http://mobilecdngz.kugou.com")),
+      method: jsString("GET"),
+      parameters: stringObjectMap(paramsMap),
+      cookies: stringStringMap(
+        jsOr(context.session.cookies, <String, Object?>{}),
+      ),
+      clearDefaultParameters: jsTruthy(true),
+    ),
+  );
+}
+
+Future<KugouResponse<Object?>> _generatedEffectsCarBrand(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  return context.request(
+    KugouRequest(
+      path: jsString("/api/v5/car_sound/get_brand"),
+      baseUri: Uri.parse(jsString("http://mobilecdngz.kugou.com")),
+      method: jsString("GET"),
+      cookies: stringStringMap(
+        jsOr(context.session.cookies, <String, Object?>{}),
+      ),
+      clearDefaultParameters: jsTruthy(true),
+    ),
+  );
+}
+
+Future<KugouResponse<Object?>> _generatedEffectsCarBrandLists(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  final paramsMap = <String, Object?>{
+    "plat": 2,
+    "version": 12460,
+    "apiver": 2,
+    "sort": 1,
+    "pagesize": jsOr(input["pagesize"], 30),
+    "page": jsOr(input["page"], 1),
+    "classify": 5,
+    "rel_id": jsOr(input["rel_id"], 0),
+  };
+  return context.request(
+    KugouRequest(
+      path: jsString("/api/v3/sound/list"),
+      baseUri: Uri.parse(jsString("http://mobilecdngz.kugou.com")),
+      method: jsString("GET"),
+      parameters: stringObjectMap(paramsMap),
+      cookies: stringStringMap(
+        jsOr(context.session.cookies, <String, Object?>{}),
+      ),
+      clearDefaultParameters: jsTruthy(true),
+    ),
+  );
+}
+
+Future<KugouResponse<Object?>> _generatedEffectsMatch(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  final paramsMap = <String, Object?>{"plat": 2, "version": 12460};
+  return context.request(
+    KugouRequest(
+      path: jsString("/api/v5/earphone/match"),
+      baseUri: Uri.parse(jsString("http://mobilecdngz.kugou.com")),
+      method: jsString("GET"),
+      parameters: stringObjectMap(paramsMap),
+      cookies: stringStringMap(
+        jsOr(context.session.cookies, <String, Object?>{}),
+      ),
+      clearDefaultParameters: jsTruthy(true),
     ),
   );
 }
@@ -1207,7 +1412,7 @@ Future<KugouResponse<Object?>> _generatedGetModel(
     "classify": "2,3",
     "plat": 2,
     "privilege": 1,
-    "sort": 2,
+    "sort": jsOr(input["sort"], 2),
   };
   return context.request(
     KugouRequest(
@@ -1243,6 +1448,47 @@ Future<KugouResponse<Object?>> _generatedGetVerifyInfo(
       path: jsString("/verifyservice/v3/get_verify_info"),
       method: jsString("POST"),
       data: dataMap,
+      cookies: stringStringMap(
+        jsOr(context.session.cookies, <String, Object?>{}),
+      ),
+    ),
+  );
+}
+
+Future<KugouResponse<Object?>> _generatedHomeDiscover(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  final userid = jsOr(
+    jsOr(input["userid"], endpointCookie(context, input, "userid")),
+    0,
+  );
+  final goKyExtra = jsOr(input["go_ky_extra"], <Object?>[
+    <String, Object?>{"key": "network", "val": "2"},
+    <String, Object?>{"key": "play_mode", "val": "2"},
+    <String, Object?>{"key": "no_mv_ret", "val": "1"},
+  ]);
+  final data = <String, Object?>{
+    "support": jsOr(input["support"], "only_song"),
+    "userid": userid,
+    "recall_type": jsOr(input["recall_type"], "song"),
+    "today_play_num": jsOr(input["today_play_num"], 0),
+    "pagesize": jsOr(input["pagesize"], 4),
+    "go_ky_extra": goKyExtra,
+  };
+  return context.request(
+    KugouRequest(
+      path: jsString("/homediscoverrec/v1/client/home_discover_rec"),
+      method: jsString("POST"),
+      parameters: stringObjectMap(<String, Object?>{
+        "module_key": "home_discover_rec",
+        "module_id": 1,
+        "area_code": 1,
+        "platform": "android",
+        "userid": userid,
+        "clientver": 20809,
+      }),
+      data: data,
       cookies: stringStringMap(
         jsOr(context.session.cookies, <String, Object?>{}),
       ),
@@ -1547,6 +1793,36 @@ Future<KugouResponse<Object?>> _generatedLongaudioAlbumDetail(
   );
 }
 
+Future<KugouResponse<Object?>> _generatedLongaudioAlbumList(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  final dataMap = <String, Object?>{
+    "api_ver": 2,
+    "gender": jsMax(<Object?>[0, jsOr(jsNumber(input["gender"]).toInt(), 0)]),
+    "sort": jsMax(<Object?>[0, jsOr(jsNumber(input["sort"]).toInt(), 0)]),
+    "tag_id": jsMax(<Object?>[0, jsOr(jsNumber(input["tag_id"]).toInt(), 906)]),
+    "free": 1,
+    "status": jsMax(<Object?>[0, jsOr(jsNumber(input["status"]).toInt(), 0)]),
+    "page": jsMax(<Object?>[1, jsOr(jsNumber(input["page"]).toInt(), 1)]),
+    "page_size": jsMax(<Object?>[
+      1,
+      jsOr(jsNumber(input["page_size"]).toInt(), 20),
+    ]),
+    "clientver": 20789,
+  };
+  return context.request(
+    KugouRequest(
+      path: jsString("/longaudio/v1/album/list"),
+      method: jsString("get"),
+      parameters: stringObjectMap(dataMap),
+      cookies: stringStringMap(
+        jsOr(context.session.cookies, <String, Object?>{}),
+      ),
+    ),
+  );
+}
+
 Future<KugouResponse<Object?>> _generatedLongaudioDailyRecommend(
   KugouEndpointContext context,
   Map<String, Object?> input,
@@ -1576,6 +1852,71 @@ Future<KugouResponse<Object?>> _generatedLongaudioRankRecommend(
       path: jsString("/longaudio/v1/home_new/rank_card_recommend"),
       method: jsString("get"),
       parameters: stringObjectMap(<String, Object?>{"platform": "ios"}),
+      cookies: stringStringMap(
+        jsOr(context.session.cookies, <String, Object?>{}),
+      ),
+    ),
+  );
+}
+
+Future<KugouResponse<Object?>> _generatedLongaudioSearch(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  final dataMap = <String, Object?>{
+    "area_code": 1,
+    "albumhide": 1,
+    "com_user_type": 0,
+    "privilegefilter": 0,
+    "dopicfull": 1,
+    "filter": 12,
+    "platform": "AndroidFilter",
+    "tag": "em",
+    "recver": 2,
+    "iscorrection": 1,
+    "search_ability": 223,
+    "sec_aggre": 1,
+    "sec_aggre_bitmap": 0,
+    "mode_ability": 1,
+    "nocollect": 1,
+    "user_type": 0,
+    "userid":
+        ((input["userid"] ?? endpointCookie(context, input, "userid")) ?? "0"),
+    "keyword": (input["keywords"] ?? input["keyword"]),
+    "page": jsMax(<Object?>[1, jsOr(jsNumber(input["page"]).toInt(), 1)]),
+    "pagesize": jsMax(<Object?>[
+      1,
+      jsOr(jsNumber(input["pagesize"]).toInt(), 30),
+    ]),
+    "clientver": 20789,
+  };
+  return context.request(
+    KugouRequest(
+      path: jsString("/complexsearch/v4/search/song"),
+      method: jsString("get"),
+      parameters: stringObjectMap(dataMap),
+      cookies: stringStringMap(
+        jsOr(context.session.cookies, <String, Object?>{}),
+      ),
+    ),
+  );
+}
+
+Future<KugouResponse<Object?>> _generatedLongaudioTagList(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  return context.request(
+    KugouRequest(
+      path: jsString("/v3/list_audiobook_tags"),
+      method: jsString("get"),
+      parameters: stringObjectMap(<String, Object?>{
+        "platform": "android",
+        "clientver": 20789,
+      }),
+      headers: stringObjectMap(<String, Object?>{
+        "x-router": "longaudio.kugou.com",
+      }),
       cookies: stringStringMap(
         jsOr(context.session.cookies, <String, Object?>{}),
       ),
@@ -1695,6 +2036,9 @@ Future<KugouResponse<Object?>> _generatedPersonalFm(
   }
   if (jsTruthy((input["playtime"]))) {
     dataMap[jsString("playtime")] = input["playtime"];
+  }
+  if (jsTruthy((input["cur_mark"]))) {
+    dataMap[jsString("cur_mark")] = input["cur_mark"];
   }
   return context.request(
     KugouRequest(
@@ -1932,18 +2276,17 @@ Future<KugouResponse<Object?>> _generatedPlaylistTrackAllNew(
   final dataMap = <String, Object?>{
     "listid": input["listid"],
     "userid": userid,
+    "type": jsNumber(jsOr(input["type"], 0)),
+    "page": jsNumber(jsOr(input["page"], 1)),
+    "pagesize": jsNumber(jsOr(input["pagesize"], 300)),
     "area_code": 1,
-    "show_relate_goods": 0,
-    "pagesize": jsOr(input["pagesize"], 30),
     "allplatform": 1,
     "show_cover": 1,
-    "type": 0,
     "token": token,
-    "page": jsOr(input["page"], 1),
   };
   return context.request(
     KugouRequest(
-      path: jsString("/v4/get_list_all_file"),
+      path: jsString("/v4/get_list_all_file_v3"),
       method: jsString("post"),
       data: dataMap,
       headers: stringObjectMap(<String, Object?>{
@@ -2438,7 +2781,6 @@ Future<KugouResponse<Object?>> _generatedSearchLyric(
         jsOr(context.session.cookies, <String, Object?>{}),
       ),
       clearDefaultParameters: jsTruthy(true),
-      skipSignature: jsTruthy(true),
     ),
   );
 }
@@ -2448,31 +2790,54 @@ Future<KugouResponse<Object?>> _generatedSearchMixed(
   Map<String, Object?> input,
 ) async {
   final time = context.nowMilliseconds;
-  final dataMap = <String, Object?>{
-    "ab_tag": 0,
-    "ability": 511,
-    "albumhide": 0,
-    "apiver": 22,
-    "area_code": 1,
-    "clientver": 20125,
-    "cursor": 0,
-    "is_gpay": 0,
-    "iscorrection": 1,
-    "keyword": input["keyword"],
-    "nocollect": 0,
-    "osversion": 16.5,
-    "platform": "IOSFilter",
-    "recver": 2,
-    "req_ai": 1,
-    "requestid":
-        jsString(md5Hex("bdaa53d04e7475feb9024164a47032f9" + jsString(time))) +
-        "_0",
-    "search_ability": 3,
-    "sec_aggre": 1,
-    "sec_aggre_bitmap": 0,
-    "style_type": 3,
-    "tag": "em",
-  };
+  final isLite = ((context.config.isLite ? "lite" : "") == "lite");
+  final dataMap = (jsTruthy(context.config.isLite)
+      ? <String, Object?>{
+          "keyword": input["keyword"],
+          "platform": "AndroidFilter",
+          "tag": "em",
+          "area_code": jsOr(input["area_code"], 1),
+          "iscorrection": (input["iscorrection"] ?? 1),
+          "cursor": jsOr(input["cursor"], 0),
+          "apiver": 22,
+          "osversion": "15",
+          "ability": 1,
+          "clientver": jsOr(input["clientver"], 201),
+          "vip_status": jsOr(
+            jsOr(
+              input["vip_status"],
+              endpointCookie(context, input, "vip_type"),
+            ),
+            0,
+          ),
+        }
+      : <String, Object?>{
+          "ab_tag": 0,
+          "ability": 511,
+          "albumhide": 0,
+          "apiver": 22,
+          "area_code": 1,
+          "clientver": jsOr(input["clientver"], 20125),
+          "cursor": 0,
+          "is_gpay": 0,
+          "iscorrection": 1,
+          "keyword": input["keyword"],
+          "nocollect": 0,
+          "osversion": 16.5,
+          "platform": "IOSFilter",
+          "recver": 2,
+          "req_ai": 1,
+          "requestid":
+              jsString(
+                md5Hex("bdaa53d04e7475feb9024164a47032f9" + jsString(time)),
+              ) +
+              "_0",
+          "search_ability": 3,
+          "sec_aggre": 1,
+          "sec_aggre_bitmap": 0,
+          "style_type": 3,
+          "tag": "em",
+        });
   return context.request(
     KugouRequest(
       path: jsString("/v3/search/mixed"),
@@ -2684,6 +3049,38 @@ Future<KugouResponse<Object?>> _generatedSingerList(
   );
 }
 
+Future<KugouResponse<Object?>> _generatedSongAuth(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  final authorization = jsOr(
+    jsOr(input["auth"], endpointCookie(context, input, "auth")),
+    "",
+  );
+  final dataMap = <String, Object?>{
+    "authorization": authorization,
+    "module_id": 51,
+    "album_audio_id": jsNumber((input["album_audio_id"] ?? 0)),
+    "clientver": 11561,
+    "hash": jsString((jsOr(input["hash"], ""))).toLowerCase(),
+  };
+  return context.request(
+    KugouRequest(
+      path: jsString("/v1/authorization"),
+      baseUri: Uri.parse(jsString("http://gateway.kugou.com/")),
+      method: jsString("GET"),
+      parameters: stringObjectMap(dataMap),
+      headers: stringObjectMap(<String, Object?>{
+        "x-router": "trackercdngz.kugou.com",
+      }),
+      cookies: stringStringMap(<String, Object?>{
+        ...stringObjectMap(<String, Object?>{}),
+        ...stringObjectMap(context.session.cookies),
+      }),
+    ),
+  );
+}
+
 Future<KugouResponse<Object?>> _generatedSongClimax(
   KugouEndpointContext context,
   Map<String, Object?> input,
@@ -2740,6 +3137,68 @@ Future<KugouResponse<Object?>> _generatedSongRankingFilter(
       cookies: stringStringMap(
         jsOr(context.session.cookies, <String, Object?>{}),
       ),
+    ),
+  );
+}
+
+Future<KugouResponse<Object?>> _generatedSongUrlAuth(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  final quality =
+      (jsTruthy(
+        (<Object?>[
+          "piano",
+          "acappella",
+          "subwoofer",
+          "ancient",
+          "dj",
+          "surnay",
+        ]).contains(input["quality"]),
+      )
+      ? "magic_" + jsString(input["quality"])
+      : input["quality"]);
+  final isLite = ((context.config.isLite ? "lite" : "") == "lite");
+  final page_id = (jsTruthy(context.config.isLite) ? 967177915 : 151369488);
+  final ppage_id = (jsTruthy(context.config.isLite)
+      ? jsOr(input["ppage_id"], "356753938,823673182,967485191")
+      : "463467626,350369493,788954147");
+  final dataMap = <String, Object?>{
+    "album_id": jsNumber((input["album_id"] ?? 0)),
+    "area_code": 1,
+    "module": "",
+    "hash": jsString((jsOr(input["hash"], ""))).toLowerCase(),
+    "need_m": 0,
+    "ssa_flag": "is_fromtrack",
+    "version": 11430,
+    "open_time": jsOr(input["open_time"], 0),
+    "ptype": 0,
+    "need_ogg": 1,
+    "page_id": page_id,
+    "auth": jsOr(input["auth"], ""),
+    "mtype": 0,
+    "quality": jsOr(quality, 128),
+    "album_audio_id": jsNumber((input["album_audio_id"] ?? 0)),
+    "behavior": "play",
+    "pid": (jsTruthy(context.config.isLite) ? 411 : 2),
+    "module_id": 51,
+    "cmd": 26,
+    "ppage_id": ppage_id,
+    "clientver": 11561,
+    "pidversion": 3001,
+    "cdnBackup": 1,
+  };
+  return context.request(
+    KugouRequest(
+      path: jsString("/tracker/v5/url"),
+      method: jsString("GET"),
+      parameters: stringObjectMap(dataMap),
+      cookies: stringStringMap(<String, Object?>{
+        ...stringObjectMap(<String, Object?>{}),
+        ...stringObjectMap(<String, Object?>{"dfid": randomString(24)}),
+        ...stringObjectMap(context.session.cookies),
+      }),
+      encryptKey: jsTruthy(true),
     ),
   );
 }
@@ -2818,9 +3277,12 @@ Future<KugouResponse<Object?>> _generatedSongUrlNew(
   return context.request(
     KugouRequest(
       path: jsString("/v6/priv_url"),
-      baseUri: Uri.parse(jsString("http://tracker.kugou.com")),
+      baseUri: Uri.parse(jsString("http://gateway.kugou.com")),
       method: jsString("POST"),
       data: dataMap,
+      headers: stringObjectMap(<String, Object?>{
+        "x-router": "tracker.kugou.com",
+      }),
       cookies: stringStringMap(<String, Object?>{
         ...stringObjectMap(<String, Object?>{}),
         ...stringObjectMap(<String, Object?>{"dfid": dfid}),
@@ -3029,9 +3491,18 @@ Future<KugouResponse<Object?>> _generatedTopCardYouth(
     "u_info": "",
     "source_mixsong": "",
   };
+  final reqUrl =
+      (jsTruthy(
+        (jsAnd(
+          (jsNumber(input["card_id"]) == 3103),
+          (jsTypeOf(input["tagid"]) == "undefined"),
+        )),
+      )
+      ? "tag_card_recommend"
+      : "single_card_recommend");
   return context.request(
     KugouRequest(
-      path: jsString("youth/v1/song/single_card_recommend"),
+      path: jsString("youth/v1/song/" + jsString(reqUrl)),
       method: jsString("POST"),
       parameters: stringObjectMap(<String, Object?>{
         "card_id": jsOr(input["card_id"], 3005),
@@ -3041,7 +3512,7 @@ Future<KugouResponse<Object?>> _generatedTopCardYouth(
         "ver": "v2",
         "pagesize": (input["pagesize"] ?? 30),
         "module_id": 1,
-        "clientver": 11490,
+        "clientver": 12500,
       }),
       data: dataMap,
       cookies: stringStringMap(
@@ -3128,34 +3599,6 @@ Future<KugouResponse<Object?>> _generatedTopSong(
   );
 }
 
-Future<KugouResponse<Object?>> _generatedTopTagCardYouth(
-  KugouEndpointContext context,
-  Map<String, Object?> input,
-) async {
-  final dataMap = <String, Object?>{
-    "tagid": "",
-    "u_info": "",
-    "source_mixsong": "",
-  };
-  return context.request(
-    KugouRequest(
-      path: jsString("/youth/v1/song/tag_card_recommend"),
-      method: jsString("POST"),
-      parameters: stringObjectMap(<String, Object?>{
-        "ver": "v2",
-        "area_code": 1,
-        "platform": "ios",
-        "module_id": 1,
-        "clientver": 11490,
-      }),
-      data: dataMap,
-      cookies: stringStringMap(
-        jsOr(context.session.cookies, <String, Object?>{}),
-      ),
-    ),
-  );
-}
-
 Future<KugouResponse<Object?>> _generatedUserCloudUrl(
   KugouEndpointContext context,
   Map<String, Object?> input,
@@ -3227,6 +3670,74 @@ Future<KugouResponse<Object?>> _generatedUserDetail(
   );
 }
 
+Future<KugouResponse<Object?>> _generatedUserFans(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  final isLite = ((context.config.isLite ? "lite" : "") == "lite");
+  final appidUsed = (jsTruthy(context.config.isLite)
+      ? 3116
+      : context.config.appId);
+  final clientverUsed = (jsTruthy(context.config.isLite)
+      ? 11440
+      : context.config.clientVersion);
+  final token = jsOr(
+    jsOr(input["token"], endpointCookie(context, input, "token")),
+    "",
+  );
+  final userid = jsNumber(
+    jsOr(jsOr(input["userid"], endpointCookie(context, input, "userid")), 0),
+  );
+  final mid = jsString(
+    jsOr(
+      jsOr(input["mid"], endpointCookie(context, input, "KUGOU_API_MID")),
+      "",
+    ),
+  );
+  final dfid = jsOr(
+    jsOr(input["dfid"], endpointCookie(context, input, "dfid")),
+    "-",
+  );
+  final clienttime = jsNumber(
+    (jsNumber(context.nowMilliseconds) / jsNumber(1000)),
+  ).floor();
+  final data = <String, Object?>{
+    "userid": userid,
+    "dfid": dfid,
+    "plat": 1,
+    "nickimg": 1,
+    "appid": appidUsed,
+    "clientver": clientverUsed,
+    "mid": mid,
+    "clienttime": clienttime,
+    "key": context.signatures.parametersKey(
+      jsString(clienttime),
+      appidUsed,
+      clientverUsed,
+    ),
+    "p": jsString(
+      context.crypto.rsaRawEncrypt(<String, Object?>{
+        "clienttime": clienttime,
+        "token": token,
+      }),
+    ).toUpperCase(),
+  };
+  return context.request(
+    KugouRequest(
+      path: jsString("/v2/fans_list"),
+      baseUri: Uri.parse(jsString("https://relationuser.kugou.com")),
+      method: jsString("POST"),
+      parameters: stringObjectMap(<String, Object?>{"dfid": dfid}),
+      data: data,
+      cookies: stringStringMap(
+        jsOr(context.session.cookies, <String, Object?>{}),
+      ),
+      clearDefaultParameters: jsTruthy(true),
+      skipSignature: jsTruthy(true),
+    ),
+  );
+}
+
 Future<KugouResponse<Object?>> _generatedUserFollow(
   KugouEndpointContext context,
   Map<String, Object?> input,
@@ -3272,27 +3783,70 @@ Future<KugouResponse<Object?>> _generatedUserFollow(
   );
 }
 
-Future<KugouResponse<Object?>> _generatedUserFollowMessage(
+Future<KugouResponse<Object?>> _generatedUserFriends(
   KugouEndpointContext context,
   Map<String, Object?> input,
 ) async {
-  final userid = jsOr(
-    jsOr(input["userid"], endpointCookie(context, input, "userid")),
-    "0",
+  final isLite = ((context.config.isLite ? "lite" : "") == "lite");
+  final appidUsed = (jsTruthy(context.config.isLite)
+      ? 3116
+      : context.config.appId);
+  final clientverUsed = (jsTruthy(context.config.isLite)
+      ? 11440
+      : context.config.clientVersion);
+  final token = jsOr(
+    jsOr(input["token"], endpointCookie(context, input, "token")),
+    "",
   );
+  final userid = jsNumber(
+    jsOr(jsOr(input["userid"], endpointCookie(context, input, "userid")), 0),
+  );
+  final mid = jsString(
+    jsOr(
+      jsOr(input["mid"], endpointCookie(context, input, "KUGOU_API_MID")),
+      "",
+    ),
+  );
+  final dfid = jsOr(
+    jsOr(input["dfid"], endpointCookie(context, input, "dfid")),
+    "-",
+  );
+  final clienttime = jsNumber(
+    (jsNumber(context.nowMilliseconds) / jsNumber(1000)),
+  ).floor();
+  final data = <String, Object?>{
+    "userid": userid,
+    "dfid": dfid,
+    "plat": 1,
+    "nickimg": 1,
+    "appid": appidUsed,
+    "clientver": clientverUsed,
+    "mid": mid,
+    "clienttime": clienttime,
+    "key": context.signatures.parametersKey(
+      jsString(clienttime),
+      appidUsed,
+      clientverUsed,
+    ),
+    "p": jsString(
+      context.crypto.rsaRawEncrypt(<String, Object?>{
+        "clienttime": clienttime,
+        "token": token,
+      }),
+    ).toUpperCase(),
+  };
   return context.request(
     KugouRequest(
-      path: jsString("/msg.mobile/v3/msgtag/history"),
-      method: jsString("GET"),
-      parameters: stringObjectMap(<String, Object?>{
-        "filter": 1,
-        "maxid": 0,
-        "pagesize": (input["pagesize"] ?? 30),
-        "tag": "chat:" + jsString(userid) + "_" + jsString(input["id"]),
-      }),
+      path: jsString("/v1/friends_list"),
+      baseUri: Uri.parse(jsString("https://relationuser.kugou.com")),
+      method: jsString("POST"),
+      parameters: stringObjectMap(<String, Object?>{"dfid": dfid}),
+      data: data,
       cookies: stringStringMap(
         jsOr(context.session.cookies, <String, Object?>{}),
       ),
+      clearDefaultParameters: jsTruthy(true),
+      skipSignature: jsTruthy(true),
     ),
   );
 }
@@ -3323,6 +3877,58 @@ Future<KugouResponse<Object?>> _generatedUserHistory(
       path: jsString("/playhistory/v1/get_songs"),
       method: jsString("POST"),
       data: dataMap,
+      cookies: stringStringMap(
+        jsOr(context.session.cookies, <String, Object?>{}),
+      ),
+    ),
+  );
+}
+
+Future<KugouResponse<Object?>> _generatedUserInfo(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  final token = jsOr(
+    jsOr(input["token"], endpointCookie(context, input, "token")),
+    "",
+  );
+  final userid = jsNumber(
+    jsOr(jsOr(input["userid"], endpointCookie(context, input, "userid")), "0"),
+  );
+  final clienttime = context.nowMilliseconds;
+  final mid = jsOr(
+    jsOr(
+      jsOr(input["mid"], endpointCookie(context, input, "mid")),
+      endpointCookie(context, input, "KUGOU_API_MID"),
+    ),
+    "",
+  );
+  final p = jsString(
+    context.crypto.rsaRawEncrypt(<String, Object?>{
+      "clienttime": clienttime,
+      "token": token,
+    }),
+  ).toUpperCase();
+  final dataMap = <String, Object?>{
+    "p": p,
+    "appid": context.config.appId,
+    "mid": mid,
+    "clientver": context.config.clientVersion,
+    "source": 0,
+    "clienttime": clienttime,
+    "uuid": "-",
+    "userid": userid,
+    "key": context.signatures.parametersKey(clienttime),
+  };
+  return context.request(
+    KugouRequest(
+      path: jsString("/v1/get_my_userinfo"),
+      baseUri: Uri.parse(jsString("http://relation.user.kugou.com")),
+      method: jsString("POST"),
+      data: dataMap,
+      headers: stringObjectMap(<String, Object?>{
+        "Host": "relation.user.kugou.com",
+      }),
       cookies: stringStringMap(
         jsOr(context.session.cookies, <String, Object?>{}),
       ),
@@ -3816,6 +4422,29 @@ Future<KugouResponse<Object?>> _generatedYouthChannelSongDetail(
     KugouRequest(
       path: jsString("/youth/v2/post/get_song_detail"),
       method: jsString("get"),
+      parameters: stringObjectMap(dataMap),
+      cookies: stringStringMap(context.session.cookies),
+    ),
+  );
+}
+
+Future<KugouResponse<Object?>> _generatedYouthChannelSongList(
+  KugouEndpointContext context,
+  Map<String, Object?> input,
+) async {
+  final dataMap = <String, Object?>{
+    "global_collection_id": input["global_collection_id"],
+    "pagesize": jsOr(input["pagesize"], 20),
+    "page": jsOr(input["page"], 1),
+    "types": 2,
+    "is_filter": 0,
+    "apiver": 3,
+  };
+  return context.request(
+    KugouRequest(
+      path: jsString("/api/channel/v1/channel_get_song_list"),
+      baseUri: Uri.parse(jsString("https://youth.kugou.com")),
+      method: jsString("GET"),
       parameters: stringObjectMap(dataMap),
       cookies: stringStringMap(context.session.cookies),
     ),

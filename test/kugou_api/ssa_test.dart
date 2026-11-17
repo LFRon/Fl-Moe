@@ -55,11 +55,7 @@ void main() {
     expect(base64Decode(body['sid']! as String), hasLength(256));
     expect(base64Decode(body['edt']! as String), isNotEmpty);
     expect(response.headers['ssa-code'], 'challenge');
-    expect(transport.request.headers['Cookie'], contains('token=token'));
-    expect(
-      transport.request.headers['Cookie'],
-      isNot(contains('KUGOU_API_MID')),
-    );
+    expect(transport.request.headers.containsKey('Cookie'), isFalse);
   });
 }
 

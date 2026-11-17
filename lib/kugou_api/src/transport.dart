@@ -12,6 +12,10 @@ final class KugouHttpRequest {
     required this.headers,
     required this.responseType,
     this.body,
+    this.formFields,
+    this.formFileBytes,
+    this.formFileField = 'file',
+    this.formFileName,
   });
 
   final Uri uri;
@@ -20,6 +24,10 @@ final class KugouHttpRequest {
   final Map<String, Object?> headers;
   final Object? body;
   final KugouResponseType responseType;
+  final Map<String, String>? formFields;
+  final Uint8List? formFileBytes;
+  final String formFileField;
+  final String? formFileName;
 }
 
 final class KugouRawResponse {
@@ -62,7 +70,7 @@ final class DioKugouTransport implements KugouHttpTransport {
     try {
       final response = await _dio.request<Object?>(
         request.uri.toString(),
-        data: request.body,
+        data: _requestData(request),
         queryParameters: request.parameters,
         options: Options(
           method: request.method,
@@ -85,6 +93,18 @@ final class DioKugouTransport implements KugouHttpTransport {
         error,
       );
     }
+  }
+
+  Object? _requestData(KugouHttpRequest request) {
+    final fileBytes = request.formFileBytes;
+    if (fileBytes == null) return request.body;
+    return FormData.fromMap(<String, Object?>{
+      ...?request.formFields,
+      request.formFileField: MultipartFile.fromBytes(
+        fileBytes,
+        filename: request.formFileName,
+      ),
+    });
   }
 
   Object? _normalizeBytes(Object? value) {

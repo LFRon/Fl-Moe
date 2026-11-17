@@ -142,3 +142,48 @@ bool boolParameter(
   if (value is bool) return value;
   return !const {'0', 'false', 'no'}.contains(value.toString().toLowerCase());
 }
+
+/// JavaScript `values.find(v => v !== undefined && v !== null && String(v) !== '')`.
+Object? firstValue(Iterable<Object?> values) {
+  for (final value in values) {
+    if (value != null && value.toString().isNotEmpty) return value;
+  }
+  return null;
+}
+
+/// Removes null/undefined-like entries the way the upstream `compact` helper
+/// does for request parameters. Empty strings are retained only when
+/// [keepEmptyStrings] is true.
+Map<String, Object?> compactObject(
+  Map<String, Object?> values, {
+  bool keepEmptyStrings = false,
+}) => <String, Object?>{
+  for (final entry in values.entries)
+    if (entry.value != null &&
+        (keepEmptyStrings ||
+            entry.value is! String ||
+            (entry.value! as String).isNotEmpty))
+      entry.key: entry.value,
+};
+
+KugouResponse<Object?> endpointFailure({
+  int status = 502,
+  int httpStatus = 0,
+  required Map<String, Object?> body,
+}) =>
+    KugouResponse<Object?>(status: status, httpStatus: httpStatus, body: body);
+
+KugouResponse<Object?> rejectEndpoint(
+  KugouEndpointContext context, {
+  int status = 502,
+  int httpStatus = 0,
+  required Map<String, Object?> body,
+}) {
+  final response = endpointFailure(
+    status: status,
+    httpStatus: httpStatus,
+    body: body,
+  );
+  if (context.config.throwOnApiError) throw KugouApiException(response);
+  return response;
+}

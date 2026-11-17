@@ -22,8 +22,8 @@ Future<KugouResponse<Object?>> _ipZone(
       headers: const <String, Object?>{'x-router': 'yuekucategory.kugou.com'},
     ),
   );
-  final body = stringObjectMap(response.body);
-  final data = stringObjectMap(body['data']);
+  final body = Map<String, Object?>.from(stringObjectMap(response.body));
+  final data = Map<String, Object?>.from(stringObjectMap(body['data']));
   final rawList = data['list'];
   if (body['status'] == 1 && rawList is List<Object?>) {
     final list = <Object?>[
@@ -73,8 +73,8 @@ Future<KugouResponse<Object?>> _topIp(
       data: <String, Object?>{'tags': <String, Object?>{}},
     ),
   );
-  final body = stringObjectMap(response.body);
-  final data = stringObjectMap(body['data']);
+  final body = Map<String, Object?>.from(stringObjectMap(response.body));
+  final data = Map<String, Object?>.from(stringObjectMap(body['data']));
   final rawList = data['list'];
   if (body['status'] == 1 && rawList is List<Object?>) {
     data['list'] = <Object?>[
@@ -192,7 +192,7 @@ Future<KugouResponse<Object?>> _registerDevice(
   final response = await context.request(
     KugouRequest(
       baseUri: Uri.parse('https://userservice.kugou.com'),
-      path: '/risk/v2/r_register_dev',
+      path: '/risk/v3/r_register_dev',
       method: 'POST',
       parameters: <String, Object?>{
         'part': 1,

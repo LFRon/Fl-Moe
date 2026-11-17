@@ -63,7 +63,7 @@ void main() {
 
     expect(transport.requests.map((request) => request.uri.path), <String>[
       '/v7/get_all_list',
-      '/v4/get_list_all_file',
+      '/v4/get_list_all_file_v3',
     ]);
     expect(
       const KugouUserPlaylistsQuery(page: 2, pageSize: 80).toParameters(),
@@ -80,7 +80,7 @@ void main() {
   });
 
   test(
-    'lyrics use the working desktop search contract and decode KRC',
+    'lyrics use the current upstream search contract and decode KRC',
     () async {
       final transport = _TypedTransport()
         ..body = <String, Object?>{
@@ -105,15 +105,16 @@ void main() {
       expect(search.body['candidates']! as List<Object?>, hasLength(1));
       final searchRequest = transport.requests.single;
       expect(searchRequest.uri.host, 'lyrics.kugou.com');
-      expect(searchRequest.uri.path, '/search');
-      expect(searchRequest.parameters, <String, Object?>{
-        'ver': 1,
-        'man': 'yes',
-        'client': 'pc',
-        'keyword': '测试歌手 - 测试歌曲',
-        'duration': 215000,
-        'hash': 'TRACK-HASH',
-      });
+      expect(searchRequest.uri.path, '/v1/search');
+      expect(searchRequest.parameters, containsPair('album_audio_id', 123));
+      expect(searchRequest.parameters, containsPair('appid', 1005));
+      expect(searchRequest.parameters, containsPair('clientver', 20489));
+      expect(searchRequest.parameters, containsPair('duration', 215000));
+      expect(searchRequest.parameters, containsPair('hash', 'TRACK-HASH'));
+      expect(searchRequest.parameters, containsPair('keyword', '测试歌手 - 测试歌曲'));
+      expect(searchRequest.parameters, containsPair('lrctxt', 1));
+      expect(searchRequest.parameters, containsPair('man', 'no'));
+      expect(searchRequest.parameters['signature'], isA<String>());
 
       transport.body = <String, Object?>{
         'status': 200,

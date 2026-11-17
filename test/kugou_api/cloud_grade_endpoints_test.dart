@@ -84,7 +84,7 @@ void main() {
     },
   );
 
-  test('standard grade request uses the encrypted v4 protocol', () async {
+  test('grade request uses the current lite v2 protocol', () async {
     final transport = _QueueTransport(<KugouRawResponse>[
       const KugouRawResponse(
         statusCode: 200,
@@ -102,16 +102,16 @@ void main() {
     final request = transport.requests.single;
     expect(
       request.uri.toString(),
-      'https://userinfoservice.kugou.com/v4/get_grade_info',
+      'http://userinfo.user.kugou.com/v2/get_grade_info',
     );
     expect(request.method, 'POST');
-    expect(request.parameters['signature'], isA<String>());
-    expect(request.parameters['signature']! as String, hasLength(32));
-    final body = jsonDecode(request.body! as String) as Map<String, Object?>;
-    expect(body['userid'], '42');
-    expect(body['pk']! as String, hasLength(256));
-    expect(body['params'], isA<String>());
-    expect((body['params']! as String).length % 32, 0);
+    expect(request.parameters['dfid'], 'dfid-value');
+    final body = request.body! as Map<String, Object?>;
+    expect(body['appid'], '3116');
+    expect(body['clientver'], '10597');
+    expect(body['userid'], 42);
+    expect(body['p']! as String, hasLength(256));
+    expect(body['key']! as String, hasLength(32));
   });
 
   test('lite grade request uses the v2 body and raw RSA envelope', () async {
@@ -140,7 +140,7 @@ void main() {
     );
     final body = request.body! as Map<String, Object?>;
     expect(body['appid'], '3116');
-    expect(body['clientver'], '11440');
+    expect(body['clientver'], '10597');
     expect(body['p']! as String, hasLength(256));
     expect(body['key']! as String, hasLength(32));
     expect(body['d_sec'], 100);

@@ -18,16 +18,61 @@ Future<KugouResponse<Object?>> _search(
   const types = {'special', 'lyric', 'song', 'album', 'author', 'mv'};
   final requestedType = stringParameter(input, 'type', 'song');
   final type = types.contains(requestedType) ? requestedType : 'song';
+  final keyword = jsOr(input['keywords'], input['keyword']);
+  final isLite = context.config.isLite;
+
+  if (type == 'song') {
+    return context.request(
+      KugouRequest(
+        path: '/v2/search/song',
+        parameters: <String, Object?>{
+          'keyword': jsOr(keyword, ''),
+          'page': jsOr(input['page'], 1),
+          'pagesize': jsOr(input['pagesize'], 30),
+          'platform': 'AndroidFilter',
+          'iscorrection': input['iscorrection'] ?? 1,
+          'privilegefilter': input['privilegefilter'] ?? 0,
+          'area_code': jsOr(input['area_code'], 1),
+          'dopicfull': 1,
+          if (jsTruthy(input['tag'])) 'tag': input['tag'],
+          if (isLite) 'clientver': 201,
+        },
+        headers: const <String, Object?>{'x-router': 'complexsearch.kugou.com'},
+      ),
+    );
+  }
+
+  if (type == 'album') {
+    return context.request(
+      KugouRequest(
+        path: '/v1/search/album',
+        parameters: <String, Object?>{
+          'keyword': jsOr(keyword, ''),
+          'page': jsOr(input['page'], 1),
+          'pagesize': jsOr(input['pagesize'], 20),
+          'platform': 'AndroidFilter',
+          'iscorrection': input['iscorrection'] ?? 1,
+          'category': jsOr(input['category'], '1'),
+          'sorttype': jsNumber(input['sorttype']) == 1 ? 1 : 0,
+          'searchsong': jsNumber(input['searchsong']) == 1 ? 1 : 0,
+          if (jsTruthy(input['tag'])) 'tag': input['tag'],
+          if (isLite) 'clientver': 201,
+        },
+        headers: const <String, Object?>{'x-router': 'complexsearch.kugou.com'},
+      ),
+    );
+  }
+
   return context.request(
     KugouRequest(
-      path: '/${type == 'song' ? 'v3' : 'v1'}/search/$type',
+      path: '/v1/search/$type',
       parameters: <String, Object?>{
         'albumhide': 0,
         'iscorrection': 1,
-        'keyword': stringParameter(input, 'keywords'),
+        'keyword': jsOr(keyword, ''),
         'nocollect': 0,
-        'page': intParameter(input, 'page', 1),
-        'pagesize': intParameter(input, 'pagesize', 30),
+        'page': jsOr(input['page'], 1),
+        'pagesize': jsOr(input['pagesize'], 30),
         'platform': 'AndroidFilter',
       },
       headers: const <String, Object?>{'x-router': 'complexsearch.kugou.com'},
@@ -39,24 +84,21 @@ Future<KugouResponse<Object?>> _searchLyric(
   KugouEndpointContext context,
   Map<String, Object?> input,
 ) {
-  // The current lyrics service returns an empty body (x-kg-errcode 20010)
-  // for the newer /v1/search shape used by the generated compatibility
-  // endpoint. The desktop-compatible endpoint remains the source used by the
-  // KuGou clients and returns the same candidates contract.
   return context.request(
     KugouRequest(
       baseUri: Uri.parse('https://lyrics.kugou.com'),
-      path: '/search',
+      path: '/v1/search',
       parameters: <String, Object?>{
-        'ver': 1,
-        'man': 'yes',
-        'client': 'pc',
-        'keyword': stringParameter(input, 'keywords'),
-        'duration': intParameter(input, 'duration'),
-        'hash': stringParameter(input, 'hash'),
+        'album_audio_id': jsOr(input['album_audio_id'], 0),
+        'appid': context.config.appId,
+        'clientver': context.config.clientVersion,
+        'duration': jsOr(input['duration'], 0),
+        'hash': jsOr(input['hash'], ''),
+        'keyword': jsOr(input['keywords'], ''),
+        'lrctxt': 1,
+        'man': input['man'] ?? 'no',
       },
       clearDefaultParameters: true,
-      skipSignature: true,
     ),
   );
 }
@@ -76,7 +118,7 @@ Future<KugouResponse<Object?>> _songUrl(
   final requestedQuality = input['quality'];
   final quality = magicQualities.contains(requestedQuality)
       ? 'magic_$requestedQuality'
-      : requestedQuality ?? 128;
+      : jsOr(requestedQuality, 128);
   final isLite = context.config.isLite;
   return context.request(
     KugouRequest(
@@ -96,7 +138,7 @@ Future<KugouResponse<Object?>> _songUrl(
         'pidversion': 3001,
         'IsFreePart': boolParameter(input, 'free_part') ? 1 : 0,
         'ppage_id': isLite
-            ? input['ppage_id'] ?? '356753938,823673182,967485191'
+            ? jsOr(input['ppage_id'], '356753938,823673182,967485191')
             : '463467626,350369493,788954147',
         'cdnBackup': 1,
         'module': '',

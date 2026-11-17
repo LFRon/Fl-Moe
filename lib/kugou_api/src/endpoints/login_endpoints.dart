@@ -39,6 +39,7 @@ Future<KugouResponse<Object?>> _login(
         't1': _passwordLoginT1,
         't2': _passwordLoginT2,
         't3': 'MCwwLDAsMCwwLDAsMCwwLDA=',
+        'dev': endpointCookie(context, input, 'KUGOU_API_DEV'),
         'username': input['username'],
         'params': encrypted.ciphertext,
         'pk': context.crypto.rsaRawEncrypt(<String, Object?>{
@@ -212,13 +213,14 @@ Future<KugouResponse<Object?>> _loginQrCheck(
         'appid': context.config.appId,
         'srcappid': KugouApiConfig.sourceAppId,
         'qrcode': input['key'],
+        'dev': endpointCookie(context, input, 'KUGOU_API_DEV'),
       },
       signatureType: KugouSignatureType.web,
     ),
   );
   final body = _map(response.body);
   final data = _map(body['data']);
-  if (data['status'] == 4) {
+  if (jsNumber(data['status']) == 4) {
     return _appendCookies(context, response, <String>[
       'token=${jsString(data['token'])}',
       'userid=${jsString(data['userid'])}',

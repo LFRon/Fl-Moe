@@ -96,10 +96,11 @@ final class KugouCrypto {
     return hexEncode(_bigIntToBytes(encrypted, byteLength));
   }
 
-  String rsaPkcs1Encrypt(Object data) {
+  String rsaPkcs1Encrypt(Object data, {String? publicKeyPem}) {
     final bytes = _normalize(data);
+    final key = publicKeyPem == null ? publicKey : parsePublicKey(publicKeyPem);
     final cipher = PKCS1Encoding(RSAEngine())
-      ..init(true, PublicKeyParameter<RSAPublicKey>(publicKey));
+      ..init(true, PublicKeyParameter<RSAPublicKey>(key));
     final output = Uint8List(cipher.outputBlockSize);
     final length = cipher.processBlock(bytes, 0, bytes.length, output, 0);
     return hexEncode(output.sublist(0, length));
@@ -140,6 +141,18 @@ final class KugouCrypto {
       Uint8List.fromList(utf8.encode(iv)),
     ),
   );
+
+  Uint8List aesCbcEncryptBytes(
+    Uint8List data, {
+    required Uint8List key,
+    required Uint8List iv,
+  }) => _aesCbc(true, data, key, iv);
+
+  Uint8List aesCbcDecryptBytes(
+    Uint8List data, {
+    required Uint8List key,
+    required Uint8List iv,
+  }) => _aesCbc(false, data, key, iv);
 
   String rsaOaepSha256Encrypt(Object data, {required String publicKeyPem}) {
     final bytes = _normalize(data);

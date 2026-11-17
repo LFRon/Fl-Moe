@@ -71,34 +71,31 @@ final class KugouRequestExecutor {
           parameters,
           signatureData,
         ),
-        KugouSignatureType.web => signatures.web(parameters),
+        KugouSignatureType.web => signatures.web(parameters, signatureData),
         KugouSignatureType.register => signatures.register(parameters),
       };
     }
 
     final forwardedIp = request.realIp;
-    final cookieHeader = cookies.entries
-        .where((entry) => !entry.key.startsWith('KUGOU_API_'))
-        .map((entry) => '${entry.key}=${entry.value}')
-        .join('; ');
-    final headers = <String, Object?>{
-      'User-Agent': 'Android15-1070-11083-46-0-DiscoveryDRADProtocol-wifi',
-      'dfid': dfid,
-      'clienttime': parameters['clienttime'] ?? clientTime,
-      'mid': mid,
-      'kg-rc': '1',
-      'kg-thash': '5d816a0',
-      'kg-rec': 1,
-      'kg-rf': 'B9EDA08A64250DEFFBCADDEE00F8F25F',
-      if (cookieHeader.isNotEmpty &&
-          !_containsHeader(request.headers, 'cookie'))
-        'Cookie': cookieHeader,
-      if (forwardedIp != null && forwardedIp.isNotEmpty) ...{
-        'X-Real-IP': forwardedIp,
-        'X-Forwarded-For': forwardedIp,
-      },
-      ...request.headers,
-    };
+    final headers = request.clearDefaultHeaders
+        ? <String, Object?>{...request.headers}
+        : <String, Object?>{
+            'User-Agent':
+                'Android15-1070-11083-46-0-DiscoveryDRADProtocol-wifi',
+            ...request.headers,
+            'dfid': dfid,
+            if (parameters['clienttime'] != null)
+              'clienttime': parameters['clienttime'],
+            'mid': mid,
+            'kg-rc': '1',
+            'kg-thash': '5d816a0',
+            'kg-rec': 1,
+            'kg-rf': 'B9EDA08A64250DEFFBCADDEE00F8F25F',
+            if (forwardedIp != null && forwardedIp.isNotEmpty) ...{
+              'X-Real-IP': forwardedIp,
+              'X-Forwarded-For': forwardedIp,
+            },
+          };
 
     var uri = (request.baseUri ?? config.gatewayUri).resolve(request.path);
     var queryParameters = parameters;
@@ -119,6 +116,10 @@ final class KugouRequestExecutor {
           headers: headers,
           body: request.data,
           responseType: request.responseType,
+          formFields: request.formFields,
+          formFileBytes: request.formFileBytes,
+          formFileField: request.formFileField,
+          formFileName: request.formFileName,
         ),
       );
       final setCookies = _headerValues(
@@ -148,12 +149,18 @@ final class KugouRequestExecutor {
           (body is Map<String, Object?> &&
               (body['status'] == 0 ||
                   (body['error_code'] != null && body['error_code'] != 0)));
+      final responseHeaders = <String, String>{
+        for (final entry in raw.headers.entries)
+          if (entry.value.isNotEmpty)
+            entry.key.toLowerCase(): entry.value.first,
+        'ssa-code': ?ssaCode,
+      };
       final response = KugouResponse<Object?>(
         status: apiFailed ? 502 : 200,
         httpStatus: raw.statusCode,
         body: body,
         cookies: setCookies,
-        headers: <String, String>{'ssa-code': ?ssaCode},
+        headers: responseHeaders,
       );
       if (apiFailed && config.throwOnApiError) {
         throw KugouApiException(response);
@@ -208,7 +215,4 @@ final class KugouRequestExecutor {
     }
     return null;
   }
-
-  bool _containsHeader(Map<String, Object?> headers, String name) =>
-      headers.keys.any((key) => key.toLowerCase() == name);
 }

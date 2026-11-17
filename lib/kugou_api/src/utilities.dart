@@ -58,6 +58,15 @@ String generateWebGlHash([Random? suppliedRandom]) {
   return ((BigInt.from(high) << 32) | BigInt.from(low)).toString();
 }
 
+String randomHexBytes(int byteLength, [Random? suppliedRandom]) {
+  final random = suppliedRandom ?? Random.secure();
+  return List<String>.generate(
+    byteLength,
+    (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    growable: false,
+  ).join();
+}
+
 bool isUuidV4(String value) => RegExp(
   r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
   caseSensitive: false,

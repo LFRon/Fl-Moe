@@ -179,7 +179,7 @@ Future<KugouResponse<Object?>> _userCloudMatch(
     ),
   );
 
-  final body = stringObjectMap(response.body);
+  final body = Map<String, Object?>.from(stringObjectMap(response.body));
   final rawData = body['data'];
   if (body['status'] == 1 && rawData is List<Object?>) {
     final matches = <Object?>[
@@ -478,6 +478,7 @@ Future<KugouResponse<Object?>> _bssRequest(
       'Content-Type': ?contentType,
     },
     clearDefaultParameters: true,
+    clearDefaultHeaders: true,
     skipSignature: true,
   ),
 );

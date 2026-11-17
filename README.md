@@ -8,7 +8,7 @@ Fl-Moe 是面向 Windows 与 GNU/Linux 的 Flutter 萌音客户端。它保留�
 - 酷狗后端直接编译进 Flutter 应用，不启动子进程、不监听 localhost，也不依赖 Node.js、WebF 或 JavaScript 引擎。
 - 生产环境的 `KugouApi`、Dio、Cookie、签名、密码学与 JSON 解析驻留在长期运行的后台 Dart isolate，UI isolate 只交换可发送的强类型消息；云盘字节数据使用 `TransferableTypedData` 传输。
 - 应用默认使用概念版，可在设置中选择下次启动使用的标准版；切换后需要重启应用才会生效。两种客户端共享稳定的设备身份，但分别持久化互不兼容的登录凭据；切换只会恢复目标客户端自己的认证会话，不会跨平台复用 token。
-- 参考 `KuGouMusicApi/module` 的 169 个模块提供 169 个同名路由；路由集合已经逐项比对。
+- 参考 `KuGouMusicApi/module` 的当前公开模块提供 234 个同名路由；普通声明式模块由静态生成器生成，复杂模块使用强类型 Dart 手写实现，路由集合逐项比对。
 - 默认网络层为 Dio，网络层通过 `KugouHttpTransport` 抽象，可在测试中完全替换。
 - 已实现标准版/概念版签名、会话与设备身份、Cookie、AES、RSA、KRC、SSA、登录、二维码、云盘分片上传和听歌等级双协议。
 - Analyzer 开启 strict casts、strict inference 与 strict raw types；运行时代码不使用 `dynamic`、反射或运行时脚本解释。

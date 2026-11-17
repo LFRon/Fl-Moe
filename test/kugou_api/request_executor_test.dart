@@ -59,8 +59,7 @@ void main() {
       expect(sent.parameters['userid'], '42');
       expect(sent.parameters['signature'], isA<String>());
       expect(sent.headers['kg-rf'], 'B9EDA08A64250DEFFBCADDEE00F8F25F');
-      expect(sent.headers['Cookie'], contains('token=token-value'));
-      expect(sent.headers['Cookie'], isNot(contains('KUGOU_API_MID')));
+      expect(sent.headers.containsKey('Cookie'), isFalse);
       expect(session['vip_type'], '2');
       expect(session['vip_token'], 'x==');
     },

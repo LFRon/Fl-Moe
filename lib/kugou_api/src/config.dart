@@ -32,4 +32,7 @@ final class KugouApiConfig {
   static const String wxLiteAppId = 'wx72b795aca60ad321';
   static const String wxSecret = '4efcab88b700769e376e3f6087b8abc9';
   static const String wxLiteSecret = '33e486041e5e25729a4e3d2da7502f9a';
+  static const String qqAppId = '205141';
+  static const String qqLiteAppId = '101706348';
+  static const int liteGradeClientVersion = 10597;
 }

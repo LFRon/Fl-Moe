@@ -14,20 +14,31 @@ final class KugouSignatures {
 
   final KugouApiConfig config;
 
-  String web(Map<String, Object?> parameters) {
+  String web(Map<String, Object?> parameters, [Object? data]) {
     const salt = 'NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt';
     final parts =
         parameters.entries
             .map((entry) => '${entry.key}=${jsValueString(entry.value)}')
             .toList()
           ..sort();
-    return md5Hex('$salt${parts.join()}$salt');
+    final dataString = data is String
+        ? data
+        : (data == null ? '' : jsValueString(data));
+    return md5Hex('$salt${parts.join()}$dataString$salt');
   }
 
-  String android(Map<String, Object?> parameters, [Object? data]) {
-    final salt = config.isLite
+  String androidStandard(Map<String, Object?> parameters, [Object? data]) =>
+      _android(parameters, data, 'OIlwieks28dk2k092lksi2UIkp');
+
+  String android(Map<String, Object?> parameters, [Object? data]) => _android(
+    parameters,
+    data,
+    config.isLite
         ? 'LnT6xpN3khm36zse0QzvmgTZ3waWdRSA'
-        : 'OIlwieks28dk2k092lksi2UIkp';
+        : 'OIlwieks28dk2k092lksi2UIkp',
+  );
+
+  String _android(Map<String, Object?> parameters, Object? data, String salt) {
     final keys = parameters.keys.toList()..sort();
     final parameterString = keys.map((key) {
       final value = parameters[key];

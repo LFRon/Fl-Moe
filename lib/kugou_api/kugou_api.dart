@@ -2,13 +2,21 @@ import 'src/config.dart';
 import 'src/crypto.dart';
 import 'src/endpoint.dart';
 import 'src/endpoints/cloud_endpoints.dart';
+import 'src/endpoints/comment_endpoints.dart';
 import 'src/endpoints/core_endpoints.dart';
 import 'src/endpoints/generated_endpoints.dart';
 import 'src/endpoints/grade_endpoints.dart';
+import 'src/endpoints/listen_together_endpoints.dart';
 import 'src/endpoints/login_endpoints.dart';
+import 'src/endpoints/login_extra_endpoints.dart';
 import 'src/endpoints/manual_endpoints.dart';
 import 'src/endpoints/misc_endpoints.dart';
+import 'src/endpoints/misc_extra_endpoints.dart';
+import 'src/endpoints/playlist_management_endpoints.dart';
 import 'src/endpoints/ssa_endpoints.dart';
+import 'src/endpoints/team_endpoints.dart';
+import 'src/endpoints/user_listen_report_endpoints.dart';
+import 'src/endpoints/user_social_endpoints.dart';
 import 'src/models.dart';
 import 'src/request_executor.dart';
 import 'src/session.dart';
@@ -45,6 +53,14 @@ final class KugouApi {
       ...createSsaEndpointHandlers(),
       ...createCloudEndpointHandlers(),
       ...createGradeEndpointHandlers(),
+      ...createCommentEndpointHandlers(),
+      ...createPlaylistManagementHandlers(),
+      ...createUserSocialHandlers(),
+      ...createUserListenReportHandlers(),
+      ...createTeamEndpointHandlers(),
+      ...createListenTogetherHandlers(),
+      ...createLoginExtraHandlers(),
+      ...createMiscExtraHandlers(),
       ...?additionalEndpoints,
     };
   }

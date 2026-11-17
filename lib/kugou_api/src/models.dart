@@ -16,9 +16,14 @@ final class KugouRequest {
     this.signatureType = KugouSignatureType.android,
     this.encryptKey = false,
     this.clearDefaultParameters = false,
+    this.clearDefaultHeaders = false,
     this.skipSignature = false,
     this.responseType = KugouResponseType.json,
     this.realIp,
+    this.formFields,
+    this.formFileBytes,
+    this.formFileField = 'file',
+    this.formFileName,
   }) : parameters = parameters ?? <String, Object?>{},
        headers = headers ?? <String, Object?>{},
        cookies = cookies ?? <String, String>{};
@@ -33,9 +38,17 @@ final class KugouRequest {
   final KugouSignatureType signatureType;
   final bool encryptKey;
   final bool clearDefaultParameters;
+  final bool clearDefaultHeaders;
   final bool skipSignature;
   final KugouResponseType responseType;
   final String? realIp;
+
+  /// Optional multipart/form-data upload. File bytes stay inside the backend
+  /// isolate and never cross the typed UI/backend boundary.
+  final Map<String, String>? formFields;
+  final Uint8List? formFileBytes;
+  final String formFileField;
+  final String? formFileName;
 }
 
 final class KugouResponse<T> {
