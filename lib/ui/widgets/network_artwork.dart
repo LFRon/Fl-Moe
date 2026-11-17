@@ -40,6 +40,12 @@ final class NetworkArtwork extends StatelessWidget {
               width: resolvedWidth,
               height: resolvedHeight,
               fit: BoxFit.cover,
+              // List and grid thumbnails are often built together while a page
+              // transition is running. A 500 ms cross-fade would keep every
+              // visible image in its own opacity layer during that frame budget.
+              fadeInDuration: Duration.zero,
+              fadeOutDuration: Duration.zero,
+              placeholderFadeInDuration: Duration.zero,
               memCacheWidth: resolvedWidth == null
                   ? null
                   : (resolvedWidth * MediaQuery.devicePixelRatioOf(context))

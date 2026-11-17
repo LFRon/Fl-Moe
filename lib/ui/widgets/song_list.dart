@@ -45,6 +45,9 @@ final class SongListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GetBuilder<PlaybackController>(
+    // A row only renders the current track identity. Position, volume and
+    // buffering ticks must not rebuild every visible row.
+    filter: (player) => (hash: player.currentTrack?.hash),
     builder: (player) {
       final currentHash = player.currentTrack?.hash;
       final selected = currentHash == track.hash;

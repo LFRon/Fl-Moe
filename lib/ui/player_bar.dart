@@ -14,14 +14,25 @@ final class PlayerBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GetBuilder<PlaybackController>(
+    // Position ticks are isolated in _PlayerProgressSlider/_PlayerTimeLabel.
+    // Otherwise every media position event rebuilds the whole bottom bar,
+    // including the transport controls and volume UI.
+    filter: (player) => (
+      track: player.currentTrack,
+      playing: player.playing,
+      buffering: player.buffering,
+      resolving: player.resolving,
+      seeking: player.seeking,
+      error: player.error,
+      quality: player.resolvedQuality,
+      volume: player.volume,
+      canGoPrevious: player.canGoPrevious,
+      canGoNext: player.canGoNext,
+      playbackMode: player.playbackMode,
+    ),
     builder: (player) {
       final track = player.currentTrack;
       final scheme = Theme.of(context).colorScheme;
-      final durationMs = player.duration.inMilliseconds;
-      final positionMs = player.position.inMilliseconds.clamp(
-        0,
-        durationMs > 0 ? durationMs : 1,
-      );
       return Material(
         color: scheme.surfaceContainerLowest,
         child: Container(
@@ -33,29 +44,7 @@ final class PlayerBar extends StatelessWidget {
           ),
           child: Column(
             children: <Widget>[
-              SizedBox(
-                height: 14,
-                child: SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    trackHeight: 2.5,
-                    thumbShape: const RoundSliderThumbShape(
-                      enabledThumbRadius: 4.5,
-                    ),
-                    overlayShape: const RoundSliderOverlayShape(
-                      overlayRadius: 10,
-                    ),
-                  ),
-                  child: Slider(
-                    value: positionMs.toDouble(),
-                    max: durationMs > 0 ? durationMs.toDouble() : 1,
-                    onChanged: track == null
-                        ? null
-                        : (value) => unawaited(
-                            player.seek(Duration(milliseconds: value.round())),
-                          ),
-                  ),
-                ),
-              ),
+              const _PlayerProgressSlider(),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(18, 2, 18, 9),
@@ -184,11 +173,7 @@ final class PlayerBar extends StatelessWidget {
                                     ?.copyWith(color: scheme.error),
                               )
                             else
-                              Text(
-                                '${_format(player.position)} / ${_format(player.duration)}',
-                                style: Theme.of(context).textTheme.labelSmall
-                                    ?.copyWith(color: scheme.onSurfaceVariant),
-                              ),
+                              const _PlayerTimeLabel(),
                           ],
                         ),
                       ),
@@ -328,6 +313,60 @@ final class PlayerBar extends StatelessWidget {
         ),
       );
     },
+  );
+}
+
+final class _PlayerProgressSlider extends StatelessWidget {
+  const _PlayerProgressSlider();
+
+  @override
+  Widget build(BuildContext context) => GetBuilder<PlaybackController>(
+    filter: (player) => (
+      track: player.currentTrack?.hash,
+      position: player.position,
+      duration: player.duration,
+    ),
+    builder: (player) {
+      final durationMs = player.duration.inMilliseconds;
+      final positionMs = player.position.inMilliseconds.clamp(
+        0,
+        durationMs > 0 ? durationMs : 1,
+      );
+      return SizedBox(
+        height: 14,
+        child: SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            trackHeight: 2.5,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 4.5),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
+          ),
+          child: Slider(
+            value: positionMs.toDouble(),
+            max: durationMs > 0 ? durationMs.toDouble() : 1,
+            onChanged: player.currentTrack == null
+                ? null
+                : (value) => unawaited(
+                    player.seek(Duration(milliseconds: value.round())),
+                  ),
+          ),
+        ),
+      );
+    },
+  );
+}
+
+final class _PlayerTimeLabel extends StatelessWidget {
+  const _PlayerTimeLabel();
+
+  @override
+  Widget build(BuildContext context) => GetBuilder<PlaybackController>(
+    filter: (player) => (position: player.position, duration: player.duration),
+    builder: (player) => Text(
+      '${_format(player.position)} / ${_format(player.duration)}',
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    ),
   );
 }
 

@@ -14,11 +14,13 @@ final class FlMoeSkeletonScope extends StatelessWidget {
       container: true,
       liveRegion: true,
       label: '正在加载内容',
-      child: Shimmer.fromColors(
-        period: const Duration(milliseconds: 1450),
-        baseColor: scheme.surfaceContainerHighest,
-        highlightColor: scheme.surfaceContainerLowest,
-        child: child,
+      child: RepaintBoundary(
+        child: Shimmer.fromColors(
+          period: const Duration(milliseconds: 1450),
+          baseColor: scheme.surfaceContainerHighest,
+          highlightColor: scheme.surfaceContainerLowest,
+          child: child,
+        ),
       ),
     );
   }
