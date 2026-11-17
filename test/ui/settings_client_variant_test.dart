@@ -5,7 +5,7 @@ import 'package:fl_moe/core/storage/key_value_store.dart';
 import 'package:fl_moe/features/settings/app_settings_controller.dart';
 import 'package:fl_moe/kugou_api.dart';
 import 'package:fl_moe/ui/pages/settings_page/settings_page.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../../features/music/user_playlists_controller.dart';
 import '../../../widgets/loading_skeletons.dart';

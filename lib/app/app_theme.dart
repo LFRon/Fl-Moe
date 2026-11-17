@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 abstract final class FlMoeTheme {
   // Flutter's adaptive default stays an arrow on native desktop platforms.

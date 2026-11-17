@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../../features/player/playback_quality.dart';
 import '../../../../kugou_api.dart';

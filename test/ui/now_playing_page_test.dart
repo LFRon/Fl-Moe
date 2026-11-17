@@ -12,7 +12,8 @@ import 'package:fl_moe/kugou_api.dart';
 import 'package:fl_moe/ui/pages/now_playing_page/now_playing_page.dart';
 import 'package:fl_moe/ui/pages/now_playing_page/widgets/lyrics_panel.dart';
 import 'package:fl_moe/ui/player_bar.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:flutter_lyric/flutter_lyric.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 
@@ -47,7 +48,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        GetMaterialApp(
+        MaterialApp(
           home: Scaffold(
             body: GetBuilder<AppNavigationController>(
               builder: (value) => Stack(
@@ -132,16 +133,23 @@ void main() {
           .single;
       expect(lyricPainter.layout.metrics.single.line.text, '测试歌词');
       expect(
-        lyricPainter.style.contentPadding,
+        lyricPainter.style.padding,
         const EdgeInsets.symmetric(horizontal: 18, vertical: 44),
       );
-      expect(lyricPainter.style.lineTextAlign, TextAlign.left);
-      expect(lyricPainter.style.contentAlignment, CrossAxisAlignment.start);
-      expect(lyricPainter.style.lineGap, 25);
-      expect(lyricPainter.style.translationLineGap, 3);
-      expect(lyricPainter.style.activeAnchorPosition, 0.5);
+      expect(lyricPainter.style.preset.textAlign, TextAlign.left);
+      expect(
+        lyricPainter.style.preset.contentAlignment,
+        LyricContentAlignment.start,
+      );
+      expect(lyricPainter.style.preset.lineSpacing, 25);
+      expect(lyricPainter.style.preset.translationSpacing, 3);
+      expect(lyricPainter.style.preset.activeAnchor.position, 0.5);
+      expect(
+        lyricPainter.style.preset.activeAnchor.target,
+        LyricAnchorTarget.lineCenter,
+      );
       expect(lyricPainter.style.textStyle.fontWeight, FontWeight.w600);
-      expect(lyricPainter.style.activeStyle.fontWeight, FontWeight.w800);
+      expect(lyricPainter.style.activeTextStyle.fontWeight, FontWeight.w800);
       expect(
         find.descendant(of: lyricList, matching: find.byType(Scrollable)),
         findsNothing,

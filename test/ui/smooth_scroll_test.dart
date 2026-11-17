@@ -1,6 +1,6 @@
 import 'package:fl_moe/ui/scrolling/fl_moe_smooth_scroll.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:silky_scroll/silky_scroll.dart';
 

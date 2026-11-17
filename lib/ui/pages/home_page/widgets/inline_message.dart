@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 final class InlineMessage extends StatelessWidget {
   const InlineMessage({required this.message, super.key});

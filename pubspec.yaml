@@ -33,25 +33,26 @@ dependencies:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
-  dio: ^5.11.0
-  crypto: ^3.0.7
+  cupertino_icons: ^2.0.0
+  dio: ^5.11.1
+  crypto: ^3.0.8
   pointycastle: ^4.0.0
-  archive: ^4.0.9
-  asn1lib: ^1.6.5
-  hive_ce: ^2.19.3
+  archive: ^4.7.1
+  asn1lib: ^1.6.8
+  hive_ce: ^2.23.3
   # 当前使用的是 Fl-Moe 魔改版 nativeapi，尚未开源，相关源码即将开源。
   nativeapi:
     path: ../nativeapi-flutter-linux/packages/nativeapi
-  cached_network_image_ce: ^4.10.0
+  cached_network_image_ce: ^4.13.2
   pretty_qr_code: ^3.6.0
   media_kit: ^1.2.6
   media_kit_libs_audio: ^1.0.7
   get: ^4.7.3
-  skeleton_shimmer: ^1.1.0
+  skeleton_shimmer: ^1.2.2
   silky_scroll: ^2.6.4
-  flutter_lyric: ^3.0.7
+  flutter_lyric: ^4.1.0
   page_transition: ^2.2.2
+  material_ui: ^1.11.1
 
 dependency_overrides:
   # 配套 cnativeapi 同属尚未开源、即将开源的 Fl-Moe 魔改版本。
@@ -69,7 +70,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_to_debian: ^2.0.2
-  yaml: ^3.1.3
+  yaml: ^3.1.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

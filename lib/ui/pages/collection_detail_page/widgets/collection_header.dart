@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../../features/music/music_models.dart';
 import '../../../widgets/network_artwork.dart';

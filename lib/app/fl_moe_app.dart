@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
 import '../core/backend/music_backend.dart';
@@ -43,7 +43,7 @@ final class _FlMoeAppState extends State<FlMoeApp> {
 
   @override
   Widget build(BuildContext context) => GetBuilder<AppSettingsController>(
-    builder: (settings) => GetMaterialApp(
+    builder: (settings) => MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Fl-Moe',
       themeMode: settings.themeMode,

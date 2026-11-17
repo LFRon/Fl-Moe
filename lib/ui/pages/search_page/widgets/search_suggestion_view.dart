@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../scrolling/fl_moe_smooth_scroll.dart';
 import '../../../widgets/loading_skeletons.dart';

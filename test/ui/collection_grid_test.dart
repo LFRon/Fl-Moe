@@ -9,7 +9,7 @@ import 'package:fl_moe/features/player/playback_controller.dart';
 import 'package:fl_moe/kugou_api.dart';
 import 'package:fl_moe/ui/widgets/collection_grid.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 

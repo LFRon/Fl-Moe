@@ -16,7 +16,7 @@ import 'package:fl_moe/ui/widgets/network_artwork.dart';
 import 'package:fl_moe/ui/window_resize_frame.dart';
 import 'package:fl_moe/ui/window_title_bar.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:skeleton_shimmer/skeleton_shimmer.dart';

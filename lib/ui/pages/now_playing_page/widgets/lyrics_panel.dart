@@ -2,12 +2,19 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_lyric/core/lyric_model.dart' as lyric_model;
-import 'package:flutter_lyric/core/lyric_style.dart';
-import 'package:flutter_lyric/render/lyric_layout.dart';
-import 'package:flutter_lyric/render/lyric_painter.dart';
-import 'package:flutter_lyric/widgets/mixins/lyric_line_switch_mixin.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:flutter_lyric/flutter_lyric.dart';
+// The public LyricView owns a Scrollable and its own browsing state. Fl-Moe
+// keeps the rendering core so desktop wheel input, click-to-seek and the
+// single-canvas repaint boundary remain under one controller.
+// ignore: implementation_imports
+import 'package:flutter_lyric/src/rendering/line_transition.dart';
+// ignore: implementation_imports
+import 'package:flutter_lyric/src/rendering/lyric_layout.dart';
+// ignore: implementation_imports
+import 'package:flutter_lyric/src/rendering/lyric_painter.dart';
+// ignore: implementation_imports
+import 'package:flutter_lyric/src/rendering/resolved_preset.dart';
 
 import '../../../../features/player/lyrics_controller.dart';
 import '../../../../features/player/lyrics_models.dart';
@@ -61,10 +68,10 @@ final class LyricsPanel extends StatelessWidget {
 
 /// Canvas-based lyrics backed by flutter_lyric's layout and paint engine.
 ///
-/// The package's stock gesture layer currently treats a desktop pointer-down
-/// as the beginning of a drag, which can swallow an otherwise valid line tap.
-/// Fl-Moe therefore owns the desktop interaction and animation state while
-/// retaining flutter_lyric's cached TextPainters and single-canvas renderer.
+/// Fl-Moe owns the desktop interaction and animation state while retaining
+/// flutter_lyric's cached TextPainters and single-canvas renderer. The public
+/// LyricView is intentionally not used because its Scrollable would compete
+/// with Fl-Moe's smooth wheel clock and click-to-center state machine.
 final class _PaintedLyricsView extends StatefulWidget {
   const _PaintedLyricsView({
     required this.lines,
@@ -87,11 +94,10 @@ final class _PaintedLyricsViewState extends State<_PaintedLyricsView>
 
   late final AnimationController _scrollController;
   late final _LyricsPaintState _paintState;
-  late lyric_model.LyricModel _model;
+  late LyricDocument _document;
   Timer? _manualResumeTimer;
   LyricLayout? _layout;
-  LyricStyle? _layoutStyle;
-  ThemeData? _layoutTheme;
+  ResolvedPreset? _layoutResolved;
   Size _layoutSize = Size.zero;
   late int _actualActiveIndex;
   double? _manualTargetScrollY;
@@ -105,7 +111,7 @@ final class _PaintedLyricsViewState extends State<_PaintedLyricsView>
   void initState() {
     super.initState();
     _actualActiveIndex = widget.activeIndex;
-    _model = _buildModel(widget.lines);
+    _document = _buildDocument(widget.lines);
     _paintState = _LyricsPaintState(_safeActualIndex);
     _scrollController = AnimationController(vsync: this)
       ..addListener(_handleScrollAnimationTick);
@@ -121,9 +127,8 @@ final class _PaintedLyricsViewState extends State<_PaintedLyricsView>
       _manualScrolling = false;
       _manualTargetScrollY = null;
       _actualActiveIndex = widget.activeIndex;
-      _model = _buildModel(widget.lines);
-      _layout = null;
-      _layoutStyle = null;
+      _invalidateLayout();
+      _document = _buildDocument(widget.lines);
       _stopScrollAnimation();
       _paintState.replace(activeIndex: _safeActualIndex, scrollY: 0);
       return;
@@ -137,19 +142,17 @@ final class _PaintedLyricsViewState extends State<_PaintedLyricsView>
     if (shouldMoveViewport) _animateToIndex(safeIndex);
   }
 
-  lyric_model.LyricModel _buildModel(List<TimedLyricLine> lines) =>
-      lyric_model.LyricModel(
-        lines: lines
-            .map(
-              (line) => lyric_model.LyricLine(
-                start: line.start,
-                end: line.end,
-                text: line.text,
-                translation: line.translation.isEmpty ? null : line.translation,
-              ),
-            )
-            .toList(growable: false),
-      );
+  LyricDocument _buildDocument(List<TimedLyricLine> lines) => LyricDocument(
+    lines: <LyricLine>[
+      for (final line in lines)
+        LyricLine(
+          start: line.start,
+          end: line.end,
+          text: line.text,
+          translation: line.translation.isEmpty ? null : line.translation,
+        ),
+    ],
+  );
 
   void _handlePointerSignal(PointerSignalEvent event) {
     if (event is! PointerScrollEvent || event.scrollDelta.dy == 0) return;
@@ -199,12 +202,8 @@ final class _PaintedLyricsViewState extends State<_PaintedLyricsView>
   }
 
   void _handleTapUp(TapUpDetails details) {
-    final style = _layoutStyle;
-    if (style == null || widget.lines.isEmpty) return;
-    final canvasPosition = details.localPosition.translate(
-      -style.contentPadding.left,
-      0,
-    );
+    if (widget.lines.isEmpty) return;
+    final canvasPosition = details.localPosition;
     for (final entry in _paintState.visibleLineRects.entries) {
       if (!entry.value.contains(canvasPosition)) continue;
       _handleLineTap(entry.key);
@@ -285,32 +284,19 @@ final class _PaintedLyricsViewState extends State<_PaintedLyricsView>
 
   void _animateToIndex(int index) {
     final layout = _layout;
-    final style = _layoutStyle;
-    if (layout == null || style == null || widget.lines.isEmpty) return;
+    if (layout == null || widget.lines.isEmpty) return;
     final safeIndex = index.clamp(0, widget.lines.length - 1).toInt();
-    final target = layout.lineOffsetY(
-      safeIndex,
-      safeIndex,
-      layout.activeAnchorPosition,
-      style.activeAlignment,
-    );
+    final anchor = layout.style.preset.activeAnchor;
+    final target = layout.lineOffsetY(safeIndex, safeIndex, anchor);
     final safeTarget = _clampScrollY(layout, target, activeIndex: safeIndex);
+    final animation = layout.style.preset.scrollAnimation.resolve(
+      (safeTarget - _paintState.scrollY).abs(),
+    );
     _animateScrollTo(
       safeTarget,
-      duration: _scrollDurationFor((safeTarget - _paintState.scrollY).abs()),
-      curve: style.scrollCurve,
+      duration: animation.duration,
+      curve: animation.curve,
     );
-  }
-
-  Duration _scrollDurationFor(double distance) {
-    final style = _layoutStyle;
-    if (style == null) return const Duration(milliseconds: 280);
-    var duration = style.scrollDuration;
-    for (final entry in style.scrollDurations.entries) {
-      if (distance < entry.key) break;
-      duration = entry.value;
-    }
-    return duration;
   }
 
   void _animateScrollTo(
@@ -338,38 +324,52 @@ final class _PaintedLyricsViewState extends State<_PaintedLyricsView>
 
   double _clampScrollY(LyricLayout layout, double value, {int? activeIndex}) {
     if (layout.metrics.isEmpty) return 0;
-    final playIndex = (activeIndex ?? _paintState.activeIndex)
+    final active = (activeIndex ?? _paintState.activeIndex)
         .clamp(0, layout.metrics.length - 1)
         .toInt();
-    final anchorPosition = layout.selectionAnchorPosition;
-    final firstAnchorOffset = layout.anchorOffsetY(
-      0,
-      playIndex == 0,
-      null,
-      layout.style.selectionAlignment,
+    final first = layout.firstIndex;
+    final last = first + layout.metrics.length - 1;
+    final style = layout.style;
+    final firstActive = layout.lineOffsetY(
+      first,
+      active,
+      style.preset.activeAnchor,
     );
-    final contentHeight = layout.contentHeight(playIndex);
-    final minimum =
-        anchorPosition < layout.style.contentPadding.top ||
-            contentHeight < anchorPosition
-        ? -anchorPosition + firstAnchorOffset
-        : -layout.style.contentPadding.top;
-    final maximum = math.max(
-      minimum,
-      contentHeight - layout.style.contentPadding.top - anchorPosition,
+    final firstSelection = layout.lineOffsetY(
+      first,
+      active,
+      style.preset.selectionAnchor,
     );
+    final minimum = math.min(
+      -style.padding.top,
+      math.min(firstActive, firstSelection),
+    );
+    var maximum = math.max(
+      layout.contentHeight(active) -
+          layout.viewSize.height +
+          style.padding.bottom,
+      math.max(
+        layout.lineOffsetY(last, active, style.preset.activeAnchor),
+        layout.lineOffsetY(last, active, style.preset.selectionAnchor),
+      ),
+    );
+    maximum = math.max(minimum, maximum);
     return value.clamp(minimum, maximum).toDouble();
   }
 
   void _handleSystemFontsChange() {
     if (!mounted) return;
     setState(() {
-      _layout = null;
-      _layoutStyle = null;
+      _stopScrollAnimation();
+      _invalidateLayout();
+      _paintState.replace(
+        activeIndex: _safeActualIndex,
+        scrollY: _paintState.scrollY,
+      );
     });
   }
 
-  LyricStyle _style(BuildContext context) {
+  LyricPreset _preset(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final baseStyle = (theme.textTheme.bodyLarge ?? const TextStyle()).copyWith(
@@ -377,66 +377,86 @@ final class _PaintedLyricsViewState extends State<_PaintedLyricsView>
       fontWeight: FontWeight.w600,
       height: 1.25,
     );
-    return LyricStyle(
+    final translationStyle = (theme.textTheme.bodySmall ?? const TextStyle())
+        .copyWith(
+          color: scheme.onSurfaceVariant.withValues(alpha: 0.68),
+          height: 1.2,
+        );
+    return LyricPreset(
+      displayMode: LyricDisplayMode.scrollable,
       textStyle: baseStyle,
-      // Equal font metrics keep a line switch paint-only. Boldness and color
-      // still identify the playing line without forcing text relayout.
-      activeStyle: baseStyle.copyWith(
+      activeTextStyle: baseStyle.copyWith(
         color: scheme.primary,
         fontWeight: FontWeight.w800,
       ),
-      translationStyle: (theme.textTheme.bodySmall ?? const TextStyle())
-          .copyWith(
-            color: scheme.onSurfaceVariant.withValues(alpha: 0.68),
-            height: 1.2,
-          ),
-      translationActiveColor: scheme.primary.withValues(alpha: 0.78),
-      lineTextAlign: TextAlign.left,
-      contentAlignment: CrossAxisAlignment.start,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 44),
-      lineGap: 25,
-      translationLineGap: 3,
-      selectionAnchorPosition: 0.5,
-      activeAnchorPosition: 0.5,
-      selectionAlignment: MainAxisAlignment.center,
-      activeAlignment: MainAxisAlignment.center,
-      selectedColor: scheme.primary,
-      selectedTranslationColor: scheme.primary.withValues(alpha: 0.78),
-      scrollDuration: const Duration(milliseconds: 280),
-      scrollDurations: <double, Duration>{
-        180: const Duration(milliseconds: 320),
-        420: const Duration(milliseconds: 380),
-        760: const Duration(milliseconds: 440),
-      },
-      scrollCurve: Curves.easeOutCubic,
-      selectionAutoResumeDuration: const Duration(milliseconds: 240),
-      activeAutoResumeDuration: _manualScrollIdle,
-      selectionAutoResumeMode: SelectionAutoResumeMode.afterSelecting,
-      activeHighlightColor: null,
-      enableSwitchAnimation: false,
+      translationInheritsTextStyle: false,
+      translationTextStyle: translationStyle,
+      activeTranslationTextStyle: TextStyle(
+        color: scheme.primary.withValues(alpha: 0.78),
+      ),
+      selectedTextColor: scheme.primary,
+      selectedTranslationTextColor: scheme.primary.withValues(alpha: 0.78),
+      textAlign: TextAlign.left,
+      contentAlignment: LyricContentAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 44),
+      lineSpacing: 25,
+      translationSpacing: 3,
+      activeAnchor: const LyricAnchor.fraction(0.5),
+      selectionAnchor: const LyricAnchor.fraction(0.5),
+      highlight: const LyricHighlight.none(),
+      edgeFade: const LyricEdgeFade.none(),
+      countdown: const LyricCountdown.none(),
+      scrollAnimation: LyricScrollAnimation.byDistance(
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+        durations: <double, Duration>{
+          180: const Duration(milliseconds: 320),
+          420: const Duration(milliseconds: 380),
+          760: const Duration(milliseconds: 440),
+        },
+      ),
+      lineTransition: const LyricLineTransition.none(),
+      layoutMode: LyricLayoutMode.dualStyle,
+      lineMotion: const LyricLineMotion(),
+      wordEffects: const LyricWordEffects(),
+      distanceBlur: const LyricDistanceBlur(),
+      interactive: true,
+      selectionSnapMode: LyricSelectionSnapMode.none,
+      resumeDelay: _manualScrollIdle,
+      resumeOnTap: true,
     );
   }
 
-  LyricLayout _ensureLayout(ThemeData theme, LyricStyle style, Size size) {
+  ResolvedPreset _resolvedPreset(BuildContext context) {
+    final media = MediaQuery.of(context);
+    return ResolvedPreset(
+      _preset(context),
+      ambient: Theme.of(context).textTheme.bodyLarge ?? const TextStyle(),
+      direction: Directionality.of(context),
+      textScaleFactor: MediaQuery.textScalerOf(context).scale(1),
+      devicePixelRatio: media.devicePixelRatio,
+      locale: Localizations.maybeLocaleOf(context),
+    );
+  }
+
+  LyricLayout _ensureLayout(ResolvedPreset resolved, Size size) {
     final cached = _layout;
     if (cached != null &&
-        identical(_layoutTheme, theme) &&
         _layoutSize == size &&
-        _layoutStyle?.compareTo(style) == RenderComparison.identical) {
+        _sameResolvedStyle(_layoutResolved, resolved)) {
       return cached;
     }
     _stopScrollAnimation();
-    final computed = LyricLayout.compute(_model, style, size);
+    final computed = LyricLayout.compute(_document, resolved, size);
+    _layout?.dispose();
     _layout = computed;
-    _layoutStyle = style;
-    _layoutTheme = theme;
+    _layoutResolved = resolved;
     _layoutSize = size;
     final activeIndex = _safeActualIndex;
     final target = computed.lineOffsetY(
       activeIndex,
       activeIndex,
-      computed.activeAnchorPosition,
-      style.activeAlignment,
+      resolved.preset.activeAnchor,
     );
     _paintState.replace(
       activeIndex: activeIndex,
@@ -445,6 +465,26 @@ final class _PaintedLyricsViewState extends State<_PaintedLyricsView>
     _manualScrolling = false;
     _manualTargetScrollY = null;
     return computed;
+  }
+
+  bool _sameResolvedStyle(ResolvedPreset? cached, ResolvedPreset next) {
+    if (cached == null) return false;
+    return cached.preset == next.preset &&
+        cached.textStyle == next.textStyle &&
+        cached.activeTextStyle == next.activeTextStyle &&
+        cached.translationTextStyle == next.translationTextStyle &&
+        cached.activeTranslationTextStyle == next.activeTranslationTextStyle &&
+        cached.padding == next.padding &&
+        cached.direction == next.direction &&
+        cached.textScaleFactor == next.textScaleFactor &&
+        cached.locale == next.locale;
+  }
+
+  void _invalidateLayout() {
+    _layout?.dispose();
+    _layout = null;
+    _layoutResolved = null;
+    _layoutSize = Size.zero;
   }
 
   @override
@@ -457,14 +497,14 @@ final class _PaintedLyricsViewState extends State<_PaintedLyricsView>
     _scrollController
       ..removeListener(_handleScrollAnimationTick)
       ..dispose();
+    _invalidateLayout();
     _paintState.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final style = _style(context);
+    final resolved = _resolvedPreset(context);
     return Semantics(
       key: const ValueKey<String>('now-playing-lyrics-list'),
       label: '同步歌词',
@@ -481,30 +521,26 @@ final class _PaintedLyricsViewState extends State<_PaintedLyricsView>
             onVerticalDragEnd: _handleVerticalDragEnd,
             onVerticalDragCancel: _handleVerticalDragCancel,
             child: RepaintBoundary(
-              child: Padding(
-                padding: style.contentPadding.copyWith(top: 0, bottom: 0),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final size = Size(
-                      constraints.maxWidth,
-                      constraints.maxHeight,
-                    );
-                    if (!size.width.isFinite ||
-                        !size.height.isFinite ||
-                        size.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-                    final layout = _ensureLayout(theme, style, size);
-                    return CustomPaint(
-                      painter: FlMoeLyricCanvasPainter._(
-                        layout: layout,
-                        style: layout.style,
-                        paintState: _paintState,
-                      ),
-                      child: const SizedBox.expand(),
-                    );
-                  },
-                ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final size = Size(
+                    constraints.maxWidth,
+                    constraints.maxHeight,
+                  );
+                  if (!size.width.isFinite ||
+                      !size.height.isFinite ||
+                      size.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  final layout = _ensureLayout(resolved, size);
+                  return CustomPaint(
+                    painter: FlMoeLyricCanvasPainter._(
+                      layout: layout,
+                      paintState: _paintState,
+                    ),
+                    child: const SizedBox.expand(),
+                  );
+                },
               ),
             ),
           ),
@@ -546,22 +582,14 @@ final class _LyricsPaintState extends ChangeNotifier {
 final class FlMoeLyricCanvasPainter extends CustomPainter {
   FlMoeLyricCanvasPainter._({
     required this.layout,
-    required this.style,
     required _LyricsPaintState paintState,
   }) : _paintState = paintState,
-       _switchState = LyricLineSwitchState(
-         exitAnimationValue: 1,
-         enterAnimationValue: 1,
-         exitIndex: -1,
-         enterIndex: paintState.activeIndex,
-       ),
        super(repaint: paintState);
 
   final LyricLayout layout;
-  final LyricStyle style;
   final _LyricsPaintState _paintState;
-  final LyricLineSwitchState _switchState;
 
+  ResolvedPreset get style => layout.style;
   int get activeIndex => _paintState.activeIndex;
   double get scrollY => _paintState.scrollY;
   Map<int, Rect> get visibleLineRects =>
@@ -569,26 +597,41 @@ final class FlMoeLyricCanvasPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    _switchState.enterIndex = _paintState.activeIndex;
+    final activeIndex = _paintState.activeIndex;
+    final rects = <int, Rect>{};
+    final first = layout.lineAtOffset(_paintState.scrollY, activeIndex);
+    for (
+      var index = first;
+      index < layout.firstIndex + layout.metrics.length;
+      index += 1
+    ) {
+      final top = layout.lineTop(index, activeIndex) - _paintState.scrollY;
+      if (top >= size.height) break;
+      final height = layout.getLineHeight(index == activeIndex, index);
+      if (top + height <= 0) continue;
+      rects[index] = Rect.fromLTWH(
+        layout.style.padding.left,
+        top,
+        layout.contentWidth,
+        height,
+      );
+    }
+    _paintState.visibleLineRects = rects;
+
     LyricPainter(
       layout: layout,
-      playIndex: _paintState.activeIndex,
+      playIndex: activeIndex,
       scrollY: _paintState.scrollY,
       activeHighlightWidth: double.infinity,
-      switchState: _switchState,
+      switchState: LyricLineSwitchState(enterIndex: activeIndex),
       isSelecting: false,
-      style: style,
-      onAnchorIndexChange: (_) {},
-      onShowLineRectsChange: (rects) {
-        _paintState.visibleLineRects = rects;
-      },
+      selectedIndex: null,
     ).paint(canvas, size);
   }
 
   @override
   bool shouldRepaint(covariant FlMoeLyricCanvasPainter oldDelegate) =>
       !identical(layout, oldDelegate.layout) ||
-      !identical(style, oldDelegate.style) ||
       !identical(_paintState, oldDelegate._paintState);
 }
 

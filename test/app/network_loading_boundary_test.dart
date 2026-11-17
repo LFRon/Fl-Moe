@@ -11,7 +11,7 @@ import 'package:fl_moe/ui/pages/home_page/home_page.dart';
 import 'package:fl_moe/ui/pages/home_page/widgets/catalog_skeleton.dart';
 import 'package:fl_moe/ui/pages/home_page/widgets/home_hero.dart';
 import 'package:fl_moe/ui/pages/search_page/search_page.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 

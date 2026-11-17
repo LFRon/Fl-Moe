@@ -9,7 +9,7 @@ import 'package:fl_moe/features/player/playback_controller.dart';
 import 'package:fl_moe/kugou_api.dart';
 import 'package:fl_moe/ui/pages/now_playing_page/widgets/lyrics_panel.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 
@@ -43,7 +43,7 @@ void main() {
     engine.emitPosition(const Duration(seconds: 12));
 
     await tester.pumpWidget(
-      GetMaterialApp(
+      MaterialApp(
         home: Scaffold(
           body: GetBuilder<PlaybackController>(
             builder: (playback) => GetBuilder<LyricsController>(
@@ -135,7 +135,7 @@ void main() {
     engine.emitPosition(const Duration(seconds: 12));
 
     await tester.pumpWidget(
-      GetMaterialApp(
+      MaterialApp(
         home: Scaffold(
           body: GetBuilder<PlaybackController>(
             builder: (playback) => GetBuilder<LyricsController>(

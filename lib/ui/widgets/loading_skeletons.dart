@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:skeleton_shimmer/skeleton_shimmer.dart';
 
 /// Gives every bone below it one synchronized shimmer sweep and paint layer.

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 final class PathRow extends StatelessWidget {
   const PathRow({required this.label, required this.path, super.key});
